@@ -7,6 +7,10 @@ import {
 	FileText,
 } from "lucide-react";
 
+import { usePageStore } from "../stores/pageStore";
+import { useEditorStore } from "../stores/editorStore";
+
+/* ---- constants ---- */
 const ICON_RAIL_WIDTH = 48;
 const MAX_WIDTH = 600;
 const DEFAULT_WIDTH = 256;
@@ -21,18 +25,21 @@ export function LeftSidebar() {
 	const sidebarRef = useRef(null);
 	const lastExpandedWidthRef = useRef(DEFAULT_WIDTH);
 
+	/* ---- state ---- */
+	const pages = usePageStore((s) => s.pages);
+	const selectedPageId = useEditorStore((s) => s.selectedPageId);
+	const selectPage = useEditorStore((s) => s.selectPage);
+
 	/* ---------------- Resize logic ---------------- */
 
 	useEffect(() => {
 		if (!isResizing) return;
 
 		const onMouseMove = (e) => {
-			if (!sidebarRef.current) return;
-
 			const { left } = sidebarRef.current.getBoundingClientRect();
-			const rawWidth = e.clientX - left;
+			const raw = e.clientX - left;
 
-			const clamped = Math.max(ICON_RAIL_WIDTH, Math.min(MAX_WIDTH, rawWidth));
+			const clamped = Math.max(ICON_RAIL_WIDTH, Math.min(MAX_WIDTH, raw));
 
 			setWidth(clamped);
 
@@ -61,30 +68,25 @@ export function LeftSidebar() {
 		document.body.style.cursor = "col-resize";
 	};
 
-	/* ---------------- FIXED toggle logic ---------------- */
+	/* ---------------- Toggle (distance-based, fixed) ---------------- */
 
 	const handleToggle = () => {
-		// Fully collapsed → expand
 		if (width === ICON_RAIL_WIDTH) {
 			setWidth(lastExpandedWidthRef.current);
 			return;
 		}
 
-		// Fully expanded → collapse
 		if (width === lastExpandedWidthRef.current) {
 			setWidth(ICON_RAIL_WIDTH);
 			return;
 		}
 
-		// In-between → nearest
-		const collapsedDistance = Math.abs(width - ICON_RAIL_WIDTH);
-		const expandedDistance = Math.abs(width - lastExpandedWidthRef.current);
+		const dCollapsed = Math.abs(width - ICON_RAIL_WIDTH);
+		const dExpanded = Math.abs(width - lastExpandedWidthRef.current);
 
-		if (collapsedDistance < expandedDistance) {
-			setWidth(ICON_RAIL_WIDTH);
-		} else {
-			setWidth(lastExpandedWidthRef.current);
-		}
+		setWidth(
+			dCollapsed < dExpanded ? ICON_RAIL_WIDTH : lastExpandedWidthRef.current
+		);
 	};
 
 	const visuallyCollapsed = width <= ICON_RAIL_WIDTH + 1;
@@ -108,68 +110,61 @@ export function LeftSidebar() {
 			{/* Header */}
 			<div className="h-10 flex items-center justify-between px-2 border-b border-neutral-800/50">
 				{!visuallyCollapsed && (
-					<span className="text-xs font-medium text-neutral-400 uppercase tracking-wider px-1">
+					<span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
 						Explorer
 					</span>
 				)}
 
 				<button
 					onClick={handleToggle}
-					className={`
-						w-7 h-7 rounded
-						flex items-center justify-center
-						hover:bg-neutral-800 transition
-						${visuallyCollapsed ? "mx-auto" : ""}
-					`}
+					className={`w-7 h-7 rounded hover:bg-neutral-800 ${
+						visuallyCollapsed ? "mx-auto" : ""
+					}`}
 				>
 					<ChevronLeft
 						size={16}
-						className={`transition-transform ${
-							visuallyCollapsed ? "rotate-180" : ""
-						}`}
+						className={visuallyCollapsed ? "rotate-180" : ""}
 					/>
 				</button>
 			</div>
 
-			{/* CONTENT */}
+			{/* Content */}
 			{visuallyCollapsed ? (
-				<div className="flex flex-col items-center gap-4 mt-6 px-2">
-					<button className="w-8 h-8 flex items-center justify-center rounded hover:bg-neutral-800">
-						<FileText size={18} />
-					</button>
-					<button className="w-8 h-8 flex items-center justify-center rounded hover:bg-neutral-800">
-						<Layers size={18} />
-					</button>
+				<div className="flex flex-col items-center gap-4 mt-6">
+					<FileText size={18} />
+					<Layers size={18} />
 				</div>
 			) : (
 				<div className="overflow-y-auto h-full">
+					{/* PAGES */}
 					<SidebarSection
 						title="Pages"
 						icon={<FileText size={14} />}
 						expanded={pagesExpanded}
 						onToggle={() => setPagesExpanded((v) => !v)}
 					>
-						<PageItem name="Home" active />
-						<PageItem name="Login" />
-						<PageItem name="Dashboard" />
+						{pages.map((page) => (
+							<PageItem
+								key={page.id}
+								page={page}
+								active={page.id === selectedPageId}
+								onSelect={() => selectPage(page.id)}
+							/>
+						))}
 					</SidebarSection>
 
 					<div className="h-px bg-neutral-800/50 mx-2" />
 
+					{/* LAYERS (static for now) */}
 					<SidebarSection
 						title="Layers"
 						icon={<Layers size={14} />}
 						expanded={layersExpanded}
 						onToggle={() => setLayersExpanded((v) => !v)}
 					>
-						<TreeItem name="Home" defaultExpanded>
-							<TreeItem name="Header" />
-							<TreeItem name="Hero" />
-							<TreeItem name="Footer" defaultExpanded>
-								<TreeItem name="Text" />
-								<TreeItem name="Button" />
-							</TreeItem>
-						</TreeItem>
+						<div className="px-3 py-1.5 text-neutral-500 text-sm">
+							Coming soon
+						</div>
 					</SidebarSection>
 				</div>
 			)}
@@ -177,86 +172,95 @@ export function LeftSidebar() {
 			{/* Resize handle */}
 			<div
 				onMouseDown={startResize}
-				className="
-					absolute top-0 right-0 bottom-0
-					w-1 cursor-col-resize
-					hover:bg-sky-500/40
-				"
+				className="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-sky-500/40"
 			/>
 		</div>
 	);
 }
 
-/* ---------- helpers ---------- */
+/* ---------------- Components ---------------- */
 
 function SidebarSection({ title, icon, children, expanded, onToggle }) {
 	return (
 		<div className="py-3">
 			<button
 				onClick={onToggle}
-				className="
-					w-full px-3 py-1.5
-					flex items-center gap-2
-					text-xs font-medium text-neutral-400
-					hover:text-neutral-200 hover:bg-neutral-800/50
-				"
+				className="w-full px-3 py-1.5 flex items-center gap-2 text-xs text-neutral-400 hover:bg-neutral-800/50"
 			>
 				{icon}
 				<span className="flex-1 text-left uppercase tracking-wider">
 					{title}
 				</span>
-				<ChevronDown
-					size={14}
-					className={`transition-transform ${expanded ? "" : "-rotate-90"}`}
-				/>
+				<ChevronDown size={14} className={expanded ? "" : "-rotate-90"} />
 			</button>
-
-			{expanded && (
-				<div className="mt-1 px-2 flex flex-col gap-0.5">{children}</div>
-			)}
+			{expanded && <div className="px-2 mt-1">{children}</div>}
 		</div>
 	);
 }
 
-function PageItem({ name, active }) {
+function PageItem({ page, active, onSelect }) {
+	const renamePage = usePageStore((s) => s.renamePage);
+
+	const [editing, setEditing] = useState(false);
+	const [value, setValue] = useState(page.name);
+
+	const commit = () => {
+		const trimmed = value.trim();
+		if (!trimmed || trimmed === page.name) {
+			setEditing(false);
+			return;
+		}
+
+		// Send rename request to server via custom event
+		if (import.meta.hot) {
+			import.meta.hot.send("pages:rename", {
+				from: page.id,
+				to: trimmed,
+			});
+
+			console.log(`[client] sent rename request: ${page.id} → ${trimmed}`);
+		}
+
+		// Update UI immediately (optimistic update)
+		usePageStore.setState((state) => ({
+			pages: state.pages.map((p) =>
+				p.id === page.id ? { ...p, name: trimmed } : p
+			),
+		}));
+
+		setEditing(false);
+	};
+
 	return (
 		<div
-			className={`px-3 py-1.5 rounded cursor-pointer text-sm ${
+			onClick={onSelect}
+			onDoubleClick={(e) => {
+				e.stopPropagation();
+				setEditing(true);
+			}}
+			className={`px-3 py-1.5 rounded text-sm cursor-pointer ${
 				active
-					? "bg-sky-500/10 text-sky-400 border border-sky-500/30"
+					? "bg-sky-500/15 text-sky-400 border border-sky-500/30"
 					: "hover:bg-neutral-800 text-neutral-300"
 			}`}
 		>
-			{name}
-		</div>
-	);
-}
-
-function TreeItem({ name, children, defaultExpanded = false }) {
-	const [expanded, setExpanded] = useState(defaultExpanded);
-	const hasChildren = Boolean(children);
-
-	return (
-		<div>
-			<div
-				onClick={() => hasChildren && setExpanded((v) => !v)}
-				className="flex items-center gap-1.5 px-2 py-1.5 rounded cursor-pointer hover:bg-neutral-800"
-			>
-				{hasChildren ? (
-					<ChevronRight
-						size={14}
-						className={`transition-transform ${expanded ? "rotate-90" : ""}`}
-					/>
-				) : (
-					<span className="w-[14px]" />
-				)}
-				<span className="truncate text-sm">{name}</span>
-			</div>
-
-			{hasChildren && expanded && (
-				<div className="ml-4 border-l border-neutral-800/50 pl-2 mt-0.5">
-					{children}
-				</div>
+			{editing ? (
+				<input
+					autoFocus
+					value={value}
+					onChange={(e) => setValue(e.target.value)}
+					onBlur={commit}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") commit();
+						if (e.key === "Escape") {
+							setValue(page.name);
+							setEditing(false);
+						}
+					}}
+					className="w-full bg-neutral-900 border border-sky-500/40 rounded px-1 outline-none"
+				/>
+			) : (
+				page.name
 			)}
 		</div>
 	);

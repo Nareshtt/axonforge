@@ -13,6 +13,13 @@ export function initKeyboard() {
 
 	const onKeyDown = (e) => {
 		if (e.repeat) return;
+		const target = e.target;
+		const isTyping =
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target.isContentEditable;
+
+		if (isTyping) return;
 
 		const {
 			mode,

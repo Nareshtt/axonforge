@@ -4,13 +4,21 @@ export function PageDOM({ page }) {
 	// Guard: page not ready yet
 	if (!page.render) return null;
 
+	// 🔑 Fixed: Check for "Home" (uppercase) and use correct path
 	const key =
-		page.id === "home"
+		page.id === "Home"
 			? "/src/pages/page.jsx"
 			: `/src/pages/${page.id}/page.jsx`;
 
 	const Mod = pageModules[key]?.default;
-	if (!Mod) return null;
+
+	if (!Mod) {
+		console.warn(
+			`[PageDOM] Module not found for page "${page.id}" at key: ${key}`
+		);
+		console.log("[PageDOM] Available modules:", Object.keys(pageModules));
+		return null;
+	}
 
 	return (
 		<div

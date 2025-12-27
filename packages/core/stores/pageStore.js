@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { useViewport } from "../canvas/useViewport";
 
-// In pageStore.js
 export const usePageStore = create((set, get) => ({
 	pages: [],
 
@@ -10,36 +9,26 @@ export const usePageStore = create((set, get) => ({
 		get().updateTransforms();
 	},
 
+	// ✅ RENAME (single source of truth)
+	renamePage: (pageId, name) => {
+		set((state) => ({
+			pages: state.pages.map((p) => (p.id === pageId ? { ...p, name } : p)),
+		}));
+	},
+
 	movePageBy: (pageId, dx, dy) => {
 		set((state) => ({
 			pages: state.pages.map((p) =>
-				p.id === pageId
-					? {
-							...p,
-							cx: p.cx + dx,
-							cy: p.cy + dy,
-					  }
-					: p
+				p.id === pageId ? { ...p, cx: p.cx + dx, cy: p.cy + dy } : p
 			),
 		}));
-
 		get().updateTransforms();
 	},
 
-	// 👇 ADD THIS METHOD
 	setPagePosition: (pageId, cx, cy) => {
 		set((state) => ({
-			pages: state.pages.map((p) =>
-				p.id === pageId
-					? {
-							...p,
-							cx,
-							cy,
-					  }
-					: p
-			),
+			pages: state.pages.map((p) => (p.id === pageId ? { ...p, cx, cy } : p)),
 		}));
-
 		get().updateTransforms();
 	},
 
