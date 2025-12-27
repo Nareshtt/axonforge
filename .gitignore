@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# AxonForge editor history (local, runtime-only)
+.axonforge_history/
