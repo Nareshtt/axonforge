@@ -1,5 +1,6 @@
-// In keyboard.js - add X and Y key handlers
+// keyboard.js
 import { useEditorStore } from "../stores/editorStore";
+import { usePageStore } from "../stores/pageStore";
 import { Commands } from "./commands";
 import { resetMousePosition } from "./mouse";
 
@@ -13,6 +14,8 @@ export function initKeyboard() {
 
 	const onKeyDown = (e) => {
 		if (e.repeat) return;
+
+		/* ---------- TYPING GUARD ---------- */
 		const target = e.target;
 		const isTyping =
 			target instanceof HTMLInputElement ||
@@ -30,7 +33,14 @@ export function initKeyboard() {
 			setAxisConstraint,
 		} = useEditorStore.getState();
 
-		// Ctrl + Shift → pan
+		/* ---------- UNDO ---------- */
+		if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+			e.preventDefault();
+			usePageStore.getState().undo();
+			return;
+		}
+
+		/* ---------- PAN ---------- */
 		if (e.ctrlKey && e.shiftKey && !isPanKeyActive) {
 			e.preventDefault();
 			isPanKeyActive = true;
@@ -38,54 +48,48 @@ export function initKeyboard() {
 			return;
 		}
 
-		// Tab → toggle mode
+		/* ---------- MODE ---------- */
 		if (e.code === "Tab") {
 			e.preventDefault();
 			Commands.toggleMode();
 			return;
 		}
 
-		// Alt + G → snap selected page to origin (0, 0)
+		/* ---------- SNAP ---------- */
 		if (e.altKey && e.key === "g" && mode === "view" && selectedPageId) {
 			e.preventDefault();
 			Commands.snapPageToOrigin(selectedPageId);
 			return;
 		}
 
-		// G → move selected page
+		/* ---------- MOVE ---------- */
 		if (e.key === "g" && mode === "view" && selectedPageId && !e.altKey) {
 			e.preventDefault();
 			resetMousePosition();
 			setIsMoving(!isMoving);
+			return;
 		}
 
-		// X → constrain to X axis (only in move mode)
+		/* ---------- AXIS CONSTRAINT ---------- */
 		if (e.key === "x" && isMoving) {
 			e.preventDefault();
-			// Toggle: if already X, turn off constraint; otherwise set to X
 			setAxisConstraint(axisConstraint === "x" ? null : "x");
+			return;
 		}
 
-		// Y → constrain to Y axis (only in move mode)
 		if (e.key === "y" && isMoving) {
 			e.preventDefault();
-			// Toggle: if already Y, turn off constraint; otherwise set to Y
 			setAxisConstraint(axisConstraint === "y" ? null : "y");
+			return;
 		}
 
-		// Arrow keys → move selected page (in move mode or directly)
+		/* ---------- ARROW MOVE ---------- */
 		if (mode === "view" && selectedPageId) {
-			const isArrowKey = [
-				"ArrowUp",
-				"ArrowDown",
-				"ArrowLeft",
-				"ArrowRight",
-			].includes(e.code);
+			const arrows = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
-			if (isArrowKey) {
+			if (arrows.includes(e.code)) {
 				e.preventDefault();
 
-				// Determine step size: Shift = large step (100), normal = small step (10)
 				const step = e.shiftKey ? 100 : 10;
 
 				let dx = 0;
@@ -106,7 +110,6 @@ export function initKeyboard() {
 						break;
 				}
 
-				// Apply axis constraint if active
 				if (axisConstraint === "x") dy = 0;
 				if (axisConstraint === "y") dx = 0;
 
@@ -115,8 +118,9 @@ export function initKeyboard() {
 			}
 		}
 
-		// Escape → cancel move
+		/* ---------- CANCEL MOVE ---------- */
 		if (e.key === "Escape" && isMoving) {
+			e.preventDefault();
 			setIsMoving(false);
 			setAxisConstraint(null);
 			resetMousePosition();

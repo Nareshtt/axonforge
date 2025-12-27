@@ -1,4 +1,4 @@
-// In mouse.js - apply axis constraint to mouse movement
+// mouse.js
 import { Commands } from "./commands";
 import { useEditorStore } from "../stores/editorStore";
 import { usePageStore } from "../stores/pageStore";
@@ -22,20 +22,24 @@ export function initMouse() {
 		const { isMoving, setIsMoving, selectedPageId, setAxisConstraint } =
 			useEditorStore.getState();
 
-		/* ---------- CONFIRM/CANCEL MOVE ---------- */
+		/* ---------- CONFIRM / CANCEL MOVE ---------- */
 		if (isMoving && selectedPageId) {
-			// Left click → confirm move
+			// Left click → confirm
 			if (e.button === 0) {
 				e.preventDefault();
 				e.stopPropagation();
+
 				setIsMoving(false);
 				setAxisConstraint(null);
 				lastPos = null;
 				moveStartPosition = null;
+
+				// ✅ COMMIT UNDO STATE
+				usePageStore.getState().commitMove();
 				return false;
 			}
 
-			// Right click → START of cancel (prevent default here too)
+			// Right click → cancel (handled on mouseup)
 			if (e.button === 2) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -44,7 +48,7 @@ export function initMouse() {
 			}
 		}
 
-		// Middle mouse → pan
+		/* ---------- PAN ---------- */
 		if (e.button === 1) {
 			e.preventDefault();
 			lastPos = { x: e.clientX, y: e.clientY };
@@ -60,7 +64,6 @@ export function initMouse() {
 		/* ---------- PAGE MOVE ---------- */
 		if (isMoving && selectedPageId) {
 			if (!lastPos) {
-				// Store the starting position on first move
 				if (!moveStartPosition) {
 					const page = usePageStore
 						.getState()
@@ -77,16 +80,11 @@ export function initMouse() {
 			let dxScreen = e.clientX - lastPos.x;
 			let dyScreen = e.clientY - lastPos.y;
 
-			// Apply axis constraint
-			if (axisConstraint === "x") {
-				dyScreen = 0;
-			} else if (axisConstraint === "y") {
-				dxScreen = 0;
-			}
+			if (axisConstraint === "x") dyScreen = 0;
+			if (axisConstraint === "y") dxScreen = 0;
 
 			const { scale } = useViewport.getState();
 
-			// screen → logical
 			usePageStore
 				.getState()
 				.movePageBy(selectedPageId, dxScreen / scale, dyScreen / scale);
@@ -107,7 +105,6 @@ export function initMouse() {
 		}
 
 		Commands.panBy(e.clientX - lastPos.x, e.clientY - lastPos.y);
-
 		lastPos = { x: e.clientX, y: e.clientY };
 	};
 
@@ -115,7 +112,7 @@ export function initMouse() {
 		const { isMoving, setIsMoving, selectedPageId, setAxisConstraint } =
 			useEditorStore.getState();
 
-		/* ---------- HANDLE RIGHT CLICK ON MOUSEUP ---------- */
+		/* ---------- CANCEL MOVE ---------- */
 		if (isMoving && selectedPageId && e.button === 2) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -138,16 +135,14 @@ export function initMouse() {
 			return false;
 		}
 
-		if (isMoving) {
-			return;
-		}
+		if (isMoving) return;
 
 		panSource = null;
 		lastPos = null;
 		Commands.panEnd();
 	};
 
-	// Belt-and-suspenders approach
+	/* ---------- CONTEXT MENU BLOCK ---------- */
 	const onContextMenu = (e) => {
 		const { isMoving } = useEditorStore.getState();
 		if (isMoving) {
@@ -158,7 +153,6 @@ export function initMouse() {
 		}
 	};
 
-	// Use document with capture phase
 	document.addEventListener("mousedown", onMouseDown, true);
 	document.addEventListener("mousemove", onMouseMove, true);
 	document.addEventListener("mouseup", onMouseUp, true);

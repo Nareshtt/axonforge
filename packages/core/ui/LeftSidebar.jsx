@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-	ChevronDown,
-	ChevronRight,
-	ChevronLeft,
-	Layers,
-	FileText,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, Layers, FileText } from "lucide-react";
 
 import { usePageStore } from "../stores/pageStore";
 import { useEditorStore } from "../stores/editorStore";
@@ -15,17 +9,46 @@ const ICON_RAIL_WIDTH = 48;
 const MAX_WIDTH = 600;
 const DEFAULT_WIDTH = 256;
 
+const STORAGE_KEY = "axonforge:left-sidebar";
+
+/* ---- persistence helpers ---- */
+
+function loadSidebarState() {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) return null;
+		return JSON.parse(raw);
+	} catch {
+		return null;
+	}
+}
+
+function saveSidebarState(state) {
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ---------------- Component ---------------- */
+
 export function LeftSidebar() {
-	const [width, setWidth] = useState(DEFAULT_WIDTH);
+	/* ---- restore persisted state ---- */
+	const persisted = loadSidebarState();
+
+	const [width, setWidth] = useState(persisted?.width ?? DEFAULT_WIDTH);
 	const [isResizing, setIsResizing] = useState(false);
 
-	const [pagesExpanded, setPagesExpanded] = useState(true);
-	const [layersExpanded, setLayersExpanded] = useState(true);
+	const [pagesExpanded, setPagesExpanded] = useState(
+		persisted?.pagesExpanded ?? true
+	);
+	const [layersExpanded, setLayersExpanded] = useState(
+		persisted?.layersExpanded ?? true
+	);
 
 	const sidebarRef = useRef(null);
-	const lastExpandedWidthRef = useRef(DEFAULT_WIDTH);
+	const lastExpandedWidthRef = useRef(
+		persisted?.lastExpandedWidth ?? DEFAULT_WIDTH
+	);
 
-	/* ---- state ---- */
+	/* ---- editor state ---- */
 	const pages = usePageStore((s) => s.pages);
 	const selectedPageId = useEditorStore((s) => s.selectedPageId);
 	const selectPage = useEditorStore((s) => s.selectPage);
@@ -38,7 +61,6 @@ export function LeftSidebar() {
 		const onMouseMove = (e) => {
 			const { left } = sidebarRef.current.getBoundingClientRect();
 			const raw = e.clientX - left;
-
 			const clamped = Math.max(ICON_RAIL_WIDTH, Math.min(MAX_WIDTH, raw));
 
 			setWidth(clamped);
@@ -51,6 +73,13 @@ export function LeftSidebar() {
 		const onMouseUp = () => {
 			setIsResizing(false);
 			document.body.style.cursor = "default";
+
+			saveSidebarState({
+				width,
+				lastExpandedWidth: lastExpandedWidthRef.current,
+				pagesExpanded,
+				layersExpanded,
+			});
 		};
 
 		document.addEventListener("mousemove", onMouseMove);
@@ -60,7 +89,7 @@ export function LeftSidebar() {
 			document.removeEventListener("mousemove", onMouseMove);
 			document.removeEventListener("mouseup", onMouseUp);
 		};
-	}, [isResizing]);
+	}, [isResizing, width, pagesExpanded, layersExpanded]);
 
 	const startResize = (e) => {
 		e.preventDefault();
@@ -68,28 +97,30 @@ export function LeftSidebar() {
 		document.body.style.cursor = "col-resize";
 	};
 
-	/* ---------------- Toggle (distance-based, fixed) ---------------- */
+	/* ---------------- Toggle ---------------- */
 
 	const handleToggle = () => {
-		if (width === ICON_RAIL_WIDTH) {
-			setWidth(lastExpandedWidthRef.current);
-			return;
+		let nextWidth;
+
+		if (width <= ICON_RAIL_WIDTH + 1) {
+			nextWidth = lastExpandedWidthRef.current;
+		} else {
+			nextWidth = ICON_RAIL_WIDTH;
 		}
 
-		if (width === lastExpandedWidthRef.current) {
-			setWidth(ICON_RAIL_WIDTH);
-			return;
-		}
+		setWidth(nextWidth);
 
-		const dCollapsed = Math.abs(width - ICON_RAIL_WIDTH);
-		const dExpanded = Math.abs(width - lastExpandedWidthRef.current);
-
-		setWidth(
-			dCollapsed < dExpanded ? ICON_RAIL_WIDTH : lastExpandedWidthRef.current
-		);
+		saveSidebarState({
+			width: nextWidth,
+			lastExpandedWidth: lastExpandedWidthRef.current,
+			pagesExpanded,
+			layersExpanded,
+		});
 	};
 
 	const visuallyCollapsed = width <= ICON_RAIL_WIDTH + 1;
+
+	/* ---------------- Render ---------------- */
 
 	return (
 		<div
@@ -141,7 +172,16 @@ export function LeftSidebar() {
 						title="Pages"
 						icon={<FileText size={14} />}
 						expanded={pagesExpanded}
-						onToggle={() => setPagesExpanded((v) => !v)}
+						onToggle={() => {
+							const v = !pagesExpanded;
+							setPagesExpanded(v);
+							saveSidebarState({
+								width,
+								lastExpandedWidth: lastExpandedWidthRef.current,
+								pagesExpanded: v,
+								layersExpanded,
+							});
+						}}
 					>
 						{pages.map((page) => (
 							<PageItem
@@ -155,12 +195,21 @@ export function LeftSidebar() {
 
 					<div className="h-px bg-neutral-800/50 mx-2" />
 
-					{/* LAYERS (static for now) */}
+					{/* LAYERS */}
 					<SidebarSection
 						title="Layers"
 						icon={<Layers size={14} />}
 						expanded={layersExpanded}
-						onToggle={() => setLayersExpanded((v) => !v)}
+						onToggle={() => {
+							const v = !layersExpanded;
+							setLayersExpanded(v);
+							saveSidebarState({
+								width,
+								lastExpandedWidth: lastExpandedWidthRef.current,
+								pagesExpanded,
+								layersExpanded: v,
+							});
+						}}
 					>
 						<div className="px-3 py-1.5 text-neutral-500 text-sm">
 							Coming soon
@@ -178,7 +227,7 @@ export function LeftSidebar() {
 	);
 }
 
-/* ---------------- Components ---------------- */
+/* ---------------- Subcomponents ---------------- */
 
 function SidebarSection({ title, icon, children, expanded, onToggle }) {
 	return (
@@ -199,8 +248,6 @@ function SidebarSection({ title, icon, children, expanded, onToggle }) {
 }
 
 function PageItem({ page, active, onSelect }) {
-	const renamePage = usePageStore((s) => s.renamePage);
-
 	const [editing, setEditing] = useState(false);
 	const [value, setValue] = useState(page.name);
 
@@ -211,17 +258,13 @@ function PageItem({ page, active, onSelect }) {
 			return;
 		}
 
-		// Send rename request to server via custom event
 		if (import.meta.hot) {
 			import.meta.hot.send("pages:rename", {
 				from: page.id,
 				to: trimmed,
 			});
-
-			console.log(`[client] sent rename request: ${page.id} → ${trimmed}`);
 		}
 
-		// Update UI immediately (optimistic update)
 		usePageStore.setState((state) => ({
 			pages: state.pages.map((p) =>
 				p.id === page.id ? { ...p, name: trimmed } : p

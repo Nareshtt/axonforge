@@ -1,46 +1,69 @@
 import { create } from "zustand";
 import { useViewport } from "../canvas/useViewport";
+import { pushHistory, popHistory } from "../editor/pageHistory";
+
+/* ---------- helpers ---------- */
+
+function snapshot(pages) {
+	const out = {};
+	for (const p of pages) {
+		out[p.id] = { cx: p.cx, cy: p.cy };
+	}
+	return out;
+}
+
+/* ---------- store ---------- */
 
 export const usePageStore = create((set, get) => ({
 	pages: [],
 
 	setPages: (pages) => {
 		set({ pages });
+		pushHistory(snapshot(pages));
 		get().updateTransforms();
-	},
-
-	// ✅ RENAME (single source of truth)
-	renamePage: (pageId, name) => {
-		set((state) => ({
-			pages: state.pages.map((p) => (p.id === pageId ? { ...p, name } : p)),
-		}));
 	},
 
 	movePageBy: (pageId, dx, dy) => {
-		set((state) => ({
-			pages: state.pages.map((p) =>
+		set((state) => {
+			const pages = state.pages.map((p) =>
 				p.id === pageId ? { ...p, cx: p.cx + dx, cy: p.cy + dy } : p
-			),
-		}));
+			);
+			return { pages };
+		});
+
 		get().updateTransforms();
 	},
 
-	setPagePosition: (pageId, cx, cy) => {
+	// 🔥 CALL THIS WHEN MOVE ENDS (mouse up)
+	commitMove: () => {
+		const pages = get().pages;
+		pushHistory(snapshot(pages));
+	},
+
+	/* ---------- UNDO ---------- */
+
+	undo: () => {
+		const prev = popHistory();
+		if (!prev) return;
+
 		set((state) => ({
-			pages: state.pages.map((p) => (p.id === pageId ? { ...p, cx, cy } : p)),
+			pages: state.pages.map((p) => (prev[p.id] ? { ...p, ...prev[p.id] } : p)),
 		}));
+
 		get().updateTransforms();
 	},
+
+	/* ---------- render ---------- */
 
 	updateTransforms: () => {
-		const { x: vx, y: vy, scale } = useViewport.getState();
+		const { x, y, scale } = useViewport.getState();
 
 		set((state) => ({
 			pages: state.pages.map((p) => ({
 				...p,
 				render: {
-					x: vx + p.cx * scale - (p.width * scale) / 2,
-					y: vy + p.cy * scale - (p.height * scale) / 2,
+					x: x + p.cx * scale - (p.width * scale) / 2,
+					y: y + p.cy * scale - (p.height * scale) / 2,
 					scale,
 				},
 			})),
