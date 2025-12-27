@@ -1,11 +1,45 @@
 import { create } from "zustand";
 import { useViewport } from "../canvas/useViewport";
 
+// In pageStore.js
 export const usePageStore = create((set, get) => ({
 	pages: [],
 
 	setPages: (pages) => {
 		set({ pages });
+		get().updateTransforms();
+	},
+
+	movePageBy: (pageId, dx, dy) => {
+		set((state) => ({
+			pages: state.pages.map((p) =>
+				p.id === pageId
+					? {
+							...p,
+							cx: p.cx + dx,
+							cy: p.cy + dy,
+					  }
+					: p
+			),
+		}));
+
+		get().updateTransforms();
+	},
+
+	// 👇 ADD THIS METHOD
+	setPagePosition: (pageId, cx, cy) => {
+		set((state) => ({
+			pages: state.pages.map((p) =>
+				p.id === pageId
+					? {
+							...p,
+							cx,
+							cy,
+					  }
+					: p
+			),
+		}));
+
 		get().updateTransforms();
 	},
 
@@ -16,8 +50,6 @@ export const usePageStore = create((set, get) => ({
 			pages: state.pages.map((p) => ({
 				...p,
 				render: {
-					// Transform from logical workspace coordinates to screen coordinates
-					// Apply viewport transform to the center position, then offset by half page size
 					x: vx + p.cx * scale - (p.width * scale) / 2,
 					y: vy + p.cy * scale - (p.height * scale) / 2,
 					scale,

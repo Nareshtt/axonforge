@@ -1,5 +1,7 @@
+// In commands.js - add the new command
 import { useViewport } from "../canvas/useViewport";
 import { useEditorStore } from "../stores/editorStore";
+import { usePageStore } from "../stores/pageStore";
 
 export const Commands = {
 	// --- NAVIGATION ---
@@ -22,5 +24,16 @@ export const Commands = {
 	// --- MODE ---
 	toggleMode() {
 		useEditorStore.getState().toggleMode();
+	},
+
+	// --- PAGE OPERATIONS ---
+	snapPageToOrigin(pageId) {
+		// Snap the page's center to the workspace origin (0, 0)
+		usePageStore.getState().setPagePosition(pageId, 0, 0);
+	},
+
+	movePageBy(pageId, dx, dy) {
+		// Move page by delta in logical coordinates
+		usePageStore.getState().movePageBy(pageId, dx, dy);
 	},
 };

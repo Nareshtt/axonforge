@@ -15,7 +15,9 @@ export function CanvasRoot() {
 
 	const { width, height } = useViewportSize();
 	const { x, y, scale, setCenter } = useViewport();
+
 	const isPanning = useEditorStore((s) => s.isPanning);
+	const clearSelection = useEditorStore((s) => s.clearSelection);
 
 	/* ---------------- Center origin ---------------- */
 	useEffect(() => {
@@ -43,7 +45,9 @@ export function CanvasRoot() {
 	/* ---------------- Cursor ---------------- */
 	useEffect(() => {
 		document.body.style.cursor = isPanning ? "grabbing" : "default";
-		return () => (document.body.style.cursor = "default");
+		return () => {
+			document.body.style.cursor = "default";
+		};
 	}, [isPanning]);
 
 	return (
@@ -55,6 +59,12 @@ export function CanvasRoot() {
 			y={y}
 			scaleX={scale}
 			scaleY={scale}
+			onMouseDown={(e) => {
+				// Clicked empty canvas → clear selection
+				if (e.target === e.target.getStage()) {
+					clearSelection();
+				}
+			}}
 		>
 			<Layer>
 				<Grid />
