@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { editorGit } from "./editorGit";
-import { writeSnapshot } from "./editorSnapshot";
+import { writeSnapshot, readSnapshot } from "./editorSnapshot";
+import { applySnapshotToProject } from "./applySnapshotToProject";
 
 export function pageBridge() {
 	return {
@@ -10,13 +11,239 @@ export function pageBridge() {
 			const rootDir = process.cwd();
 			const pagesDir = path.resolve(rootDir, "src/pages");
 
-			/* ---------- INIT EDITOR GIT ---------- */
+			/* ---------- INIT ---------- */
 			editorGit.init();
 
 			console.log("[pageBridge] ✅ initialized");
 			console.log("[pageBridge] 📂 watching:", pagesDir);
 
-			/* ---------- HANDLE RENAME ---------- */
+			/* ---------- TIMELINE: LIST ---------- */
+			server.middlewares.use("/__timeline", (req, res, next) => {
+				if (req.method !== "GET") return next();
+
+				const commits = editorGit.logStructured(200);
+				const head = editorGit.status();
+
+				res.setHeader("Content-Type", "application/json");
+				res.end(JSON.stringify({ commits, head }));
+			});
+
+			/* ---------- TIMELINE: CHECKOUT ---------- */
+			server.middlewares.use("/__timeline/checkout", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				let body = "";
+				req.on("data", (c) => (body += c));
+				req.on("end", () => {
+					try {
+						const { hash } = JSON.parse(body);
+
+						console.log(`[timeline] Checking out commit: ${hash}`);
+						editorGit.checkout(hash);
+
+						const snapshot = readSnapshot();
+
+						// Apply the snapshot to the actual project files
+						if (snapshot && snapshot.pages) {
+							console.log(
+								`[timeline] Applying snapshot with ${snapshot.pages.length} pages`
+							);
+							applySnapshotToProject(snapshot.pages);
+						}
+
+						res.setHeader("Content-Type", "application/json");
+						res.end(JSON.stringify({ success: true, snapshot }));
+					} catch (err) {
+						console.error("[timeline] checkout failed:", err);
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ error: err.message }));
+					}
+				});
+			});
+
+			/* ---------- TIMELINE: RESET ---------- */
+			server.middlewares.use("/__timeline/reset", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				let body = "";
+				req.on("data", (c) => (body += c));
+				req.on("end", () => {
+					try {
+						const { hash } = JSON.parse(body);
+
+						console.log(`[timeline] ========================================`);
+						console.log(`[timeline] RESET OPERATION STARTING`);
+						console.log(`[timeline] Target commit hash: ${hash}`);
+
+						// First, get current state
+						const beforeCommits = editorGit.logStructured(200);
+						console.log(
+							`[timeline] Commits before reset: ${beforeCommits.length}`
+						);
+
+						// Perform the reset
+						editorGit.reset(hash);
+						console.log(`[timeline] Git reset completed`);
+
+						// Verify the reset
+						const afterCommits = editorGit.logStructured(200);
+						console.log(
+							`[timeline] Commits after reset: ${afterCommits.length}`
+						);
+
+						// Read and apply the snapshot
+						const snapshot = readSnapshot();
+						console.log(
+							`[timeline] Snapshot read with ${
+								snapshot.pages?.length || 0
+							} pages`
+						);
+
+						// Apply the snapshot to the filesystem
+						if (snapshot && snapshot.pages) {
+							applySnapshotToProject(snapshot.pages);
+							console.log(`[timeline] Snapshot applied to project`);
+						}
+
+						console.log(`[timeline] RESET OPERATION COMPLETED`);
+						console.log(`[timeline] ========================================`);
+
+						res.setHeader("Content-Type", "application/json");
+						res.end(
+							JSON.stringify({
+								success: true,
+								snapshot,
+								beforeCount: beforeCommits.length,
+								afterCount: afterCommits.length,
+							})
+						);
+					} catch (err) {
+						console.error(
+							"[timeline] ========================================"
+						);
+						console.error("[timeline] RESET OPERATION FAILED");
+						console.error("[timeline] Error:", err);
+						console.error("[timeline] Stack:", err.stack);
+						console.error(
+							"[timeline] ========================================"
+						);
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ error: err.message }));
+					}
+				});
+			});
+
+			/* ---------- TIMELINE: REVERT ---------- */
+			server.middlewares.use("/__timeline/revert", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				let body = "";
+				req.on("data", (c) => (body += c));
+				req.on("end", () => {
+					try {
+						const { hash } = JSON.parse(body);
+
+						console.log(`[timeline] Reverting commit: ${hash}`);
+						editorGit.revert(hash);
+
+						const snapshot = readSnapshot();
+
+						res.setHeader("Content-Type", "application/json");
+						res.end(JSON.stringify({ success: true, snapshot }));
+					} catch (err) {
+						console.error("[timeline] revert failed:", err);
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ error: err.message }));
+					}
+				});
+			});
+
+			/* ---------- TIMELINE: CLEAR ALL ---------- */
+			server.middlewares.use("/__timeline/clear", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				try {
+					console.log(`[timeline] Clearing all history`);
+
+					// Clear all git history
+					editorGit.clearAll();
+
+					// Clear the snapshot file
+					const snapshotPath = path.join(
+						process.cwd(),
+						".axonforge_history",
+						"pages.json"
+					);
+					if (fs.existsSync(snapshotPath)) {
+						fs.unlinkSync(snapshotPath);
+						console.log(`[timeline] Cleared snapshot file`);
+					}
+
+					res.setHeader("Content-Type", "application/json");
+					res.end(JSON.stringify({ success: true }));
+				} catch (err) {
+					console.error("[timeline] clear all failed:", err);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ error: err.message }));
+				}
+			});
+
+			/* ---------- TIMELINE: CREATE BRANCH ---------- */
+			server.middlewares.use("/__timeline/create-branch", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				let body = "";
+				req.on("data", (c) => (body += c));
+				req.on("end", () => {
+					try {
+						const { hash, branchName } = JSON.parse(body);
+
+						console.log(
+							`[timeline] Creating branch ${branchName} from ${hash}`
+						);
+						editorGit.createBranch(hash, branchName);
+
+						const snapshot = readSnapshot();
+
+						res.setHeader("Content-Type", "application/json");
+						res.end(JSON.stringify({ success: true, snapshot }));
+					} catch (err) {
+						console.error("[timeline] create branch failed:", err);
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ error: err.message }));
+					}
+				});
+			});
+
+			/* ---------- APPLY SNAPSHOT ---------- */
+			server.middlewares.use("/__timeline/apply", (req, res, next) => {
+				if (req.method !== "POST") return next();
+
+				let body = "";
+				req.on("data", (c) => (body += c));
+				req.on("end", () => {
+					try {
+						const { hash } = JSON.parse(body);
+
+						console.log(`[timeline] Applying snapshot from ${hash}`);
+						editorGit.checkout(hash);
+						const snapshot = readSnapshot();
+
+						if (snapshot && snapshot.pages) {
+							applySnapshotToProject(snapshot.pages);
+						}
+
+						res.setHeader("Content-Type", "application/json");
+						res.end(JSON.stringify({ success: true }));
+					} catch (err) {
+						console.error("[timeline] apply failed:", err);
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ error: err.message }));
+					}
+				});
+			});
+
+			/* ---------- PAGE RENAME ---------- */
 			server.ws.on("pages:rename", (data) => {
 				const { from, to } = data;
 
@@ -28,8 +255,8 @@ export function pageBridge() {
 				fs.renameSync(fromPath, toPath);
 
 				const pages = readPages(pagesDir);
-
 				writeSnapshot({ pages });
+
 				editorGit.commit(`Rename page "${from}" → "${to}"`);
 
 				server.ws.send({
@@ -47,7 +274,25 @@ export function pageBridge() {
 
 				const pages = readPages(pagesDir);
 				writeSnapshot({ pages });
-				editorGit.commit("Add page");
+				const pageName = path.basename(filePath);
+
+				// Check if we're in detached HEAD state
+				try {
+					const branch = editorGit.getCurrentBranch();
+					if (branch === "HEAD") {
+						// We're in detached HEAD, create a new branch
+						const branchName = `branch-${Date.now()}`;
+						const currentHash = editorGit.status();
+						console.log(
+							`[pageBridge] Creating branch ${branchName} from detached HEAD`
+						);
+						editorGit.createBranch(currentHash, branchName);
+					}
+				} catch (err) {
+					console.warn("[pageBridge] Could not check branch state:", err);
+				}
+
+				editorGit.commit(`Add page "${pageName}"`);
 
 				server.ws.send({
 					type: "custom",
@@ -61,7 +306,25 @@ export function pageBridge() {
 
 				const pages = readPages(pagesDir);
 				writeSnapshot({ pages });
-				editorGit.commit("Delete page");
+				const pageName = path.basename(filePath);
+
+				// Check if we're in detached HEAD state
+				try {
+					const branch = editorGit.getCurrentBranch();
+					if (branch === "HEAD") {
+						// We're in detached HEAD, create a new branch
+						const branchName = `branch-${Date.now()}`;
+						const currentHash = editorGit.status();
+						console.log(
+							`[pageBridge] Creating branch ${branchName} from detached HEAD`
+						);
+						editorGit.createBranch(currentHash, branchName);
+					}
+				} catch (err) {
+					console.warn("[pageBridge] Could not check branch state:", err);
+				}
+
+				editorGit.commit(`Delete page "${pageName}"`);
 
 				server.ws.send({
 					type: "custom",

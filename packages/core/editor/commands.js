@@ -28,8 +28,13 @@ export const Commands = {
 
 	// --- PAGE OPERATIONS ---
 	snapPageToOrigin(pageId) {
+		console.log("[Commands] snapPageToOrigin:", pageId);
+
 		// Snap the page's center to the workspace origin (0, 0)
 		usePageStore.getState().setPagePosition(pageId, 0, 0);
+
+		// Commit to history
+		usePageStore.getState().commitMove();
 	},
 
 	movePageBy(pageId, dx, dy) {

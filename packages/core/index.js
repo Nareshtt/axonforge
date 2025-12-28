@@ -6,3 +6,4 @@ export { initKeyboard } from "./editor/keyboard";
 export { initMouse } from "./editor/mouse";
 export { TopBar } from "./ui/TopBar";
 export { LeftSidebar } from "./ui/LeftSidebar";
+export { TimelinePanel } from "./ui/TimelinePanel";

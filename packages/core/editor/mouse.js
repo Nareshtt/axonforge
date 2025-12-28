@@ -1,8 +1,8 @@
-// mouse.js
 import { Commands } from "./commands";
 import { useEditorStore } from "../stores/editorStore";
 import { usePageStore } from "../stores/pageStore";
 import { useViewport } from "../canvas/useViewport";
+import { useTimelineViewport } from "../stores/useTimelineViewport";
 
 let initialized = false;
 let lastPos = null;
@@ -10,6 +10,7 @@ let moveStartPosition = null;
 
 export function resetMousePosition() {
 	lastPos = null;
+	moveStartPosition = null;
 }
 
 export function initMouse() {
@@ -19,16 +20,31 @@ export function initMouse() {
 	let panSource = null;
 
 	const onMouseDown = (e) => {
+		const { focusedSurface } = useEditorStore.getState();
+
+		/* ---------- TIMELINE PANNING ---------- */
+		if (
+			focusedSurface === "timeline" &&
+			(e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey)))
+		) {
+			e.preventDefault();
+			lastPos = { x: e.clientX, y: e.clientY };
+			panSource = "timeline";
+			document.body.style.cursor = "grabbing";
+			return;
+		}
+
 		const { isMoving, setIsMoving, selectedPageId, setAxisConstraint } =
 			useEditorStore.getState();
 
-		/* ---------- CONFIRM / CANCEL MOVE ---------- */
+		/* ---------- HANDLE MOVE MODE ---------- */
 		if (isMoving && selectedPageId) {
-			// Left click → confirm
+			// Left click → confirm move
 			if (e.button === 0) {
 				e.preventDefault();
 				e.stopPropagation();
 
+				console.log("[mouse] Confirming move");
 				setIsMoving(false);
 				setAxisConstraint(null);
 				lastPos = null;
@@ -39,11 +55,11 @@ export function initMouse() {
 				return false;
 			}
 
-			// Right click → cancel (handled on mouseup)
+			// Right click → prepare to cancel (actual cancel happens on mouseup)
 			if (e.button === 2) {
+				console.log("[mouse] Right-click detected, will cancel on mouseup");
 				e.preventDefault();
 				e.stopPropagation();
-				e.stopImmediatePropagation();
 				return false;
 			}
 		}
@@ -58,21 +74,38 @@ export function initMouse() {
 	};
 
 	const onMouseMove = (e) => {
+		/* ---------- TIMELINE PANNING ---------- */
+		if (panSource === "timeline") {
+			if (!lastPos) {
+				lastPos = { x: e.clientX, y: e.clientY };
+				return;
+			}
+
+			const dx = e.clientX - lastPos.x;
+			const dy = e.clientY - lastPos.y;
+
+			useTimelineViewport.getState().pan(dx, dy);
+			lastPos = { x: e.clientX, y: e.clientY };
+			return;
+		}
+
 		const { isPanning, isMoving, selectedPageId, axisConstraint } =
 			useEditorStore.getState();
 
 		/* ---------- PAGE MOVE ---------- */
 		if (isMoving && selectedPageId) {
-			if (!lastPos) {
-				if (!moveStartPosition) {
-					const page = usePageStore
-						.getState()
-						.pages.find((p) => p.id === selectedPageId);
-					if (page) {
-						moveStartPosition = { cx: page.cx, cy: page.cy };
-					}
+			// Store initial position on first move
+			if (!moveStartPosition) {
+				const page = usePageStore
+					.getState()
+					.pages.find((p) => p.id === selectedPageId);
+				if (page) {
+					moveStartPosition = { cx: page.cx, cy: page.cy };
+					console.log("[mouse] Saved start position:", moveStartPosition);
 				}
+			}
 
+			if (!lastPos) {
 				lastPos = { x: e.clientX, y: e.clientY };
 				return;
 			}
@@ -109,14 +142,26 @@ export function initMouse() {
 	};
 
 	const onMouseUp = (e) => {
+		/* ---------- TIMELINE PAN END ---------- */
+		if (panSource === "timeline") {
+			panSource = null;
+			lastPos = null;
+			document.body.style.cursor = "default";
+			return;
+		}
+
 		const { isMoving, setIsMoving, selectedPageId, setAxisConstraint } =
 			useEditorStore.getState();
 
-		/* ---------- CANCEL MOVE ---------- */
+		/* ---------- CANCEL MOVE WITH RIGHT CLICK ---------- */
 		if (isMoving && selectedPageId && e.button === 2) {
 			e.preventDefault();
 			e.stopPropagation();
-			e.stopImmediatePropagation();
+
+			console.log(
+				"[mouse] Canceling move, restoring position:",
+				moveStartPosition
+			);
 
 			if (moveStartPosition) {
 				usePageStore
@@ -126,35 +171,39 @@ export function initMouse() {
 						moveStartPosition.cx,
 						moveStartPosition.cy
 					);
+				console.log("[mouse] Position restored");
 			}
 
 			setIsMoving(false);
 			setAxisConstraint(null);
-			lastPos = null;
-			moveStartPosition = null;
+			resetMousePosition();
 			return false;
 		}
 
-		if (isMoving) return;
-
-		panSource = null;
-		lastPos = null;
-		Commands.panEnd();
+		/* ---------- END PAN ---------- */
+		if (e.button === 1 || panSource === "middle") {
+			panSource = null;
+			lastPos = null;
+			Commands.panEnd();
+		}
 	};
 
 	/* ---------- CONTEXT MENU BLOCK ---------- */
 	const onContextMenu = (e) => {
 		const { isMoving } = useEditorStore.getState();
 		if (isMoving) {
+			console.log("[mouse] Blocking context menu during move");
 			e.preventDefault();
 			e.stopPropagation();
-			e.stopImmediatePropagation();
 			return false;
 		}
 	};
 
+	// Use capture phase to intercept events early
 	document.addEventListener("mousedown", onMouseDown, true);
-	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousemove", onMouseMove, false);
 	document.addEventListener("mouseup", onMouseUp, true);
 	document.addEventListener("contextmenu", onContextMenu, true);
+
+	console.log("[mouse] Mouse handlers initialized");
 }

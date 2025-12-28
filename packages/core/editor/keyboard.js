@@ -1,6 +1,6 @@
-// keyboard.js
 import { useEditorStore } from "../stores/editorStore";
 import { usePageStore } from "../stores/pageStore";
+import { useTimelineViewport } from "../stores/useTimelineViewport";
 import { Commands } from "./commands";
 import { resetMousePosition } from "./mouse";
 
@@ -31,9 +31,47 @@ export function initKeyboard() {
 			setIsMoving,
 			axisConstraint,
 			setAxisConstraint,
+			focusedSurface,
 		} = useEditorStore.getState();
 
-		/* ---------- UNDO ---------- */
+		// Shift + T → toggle timeline
+		if (e.shiftKey && e.key.toLowerCase() === "t") {
+			e.preventDefault();
+			useEditorStore.getState().toggleTimeline();
+			return;
+		}
+
+		/* ---------- TIMELINE-SPECIFIC CONTROLS ---------- */
+		if (focusedSurface === "timeline") {
+			// Ctrl+Z → Undo in timeline
+			if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+				e.preventDefault();
+				if (window.__timelineUndo) window.__timelineUndo();
+				return;
+			}
+
+			// Ctrl+Shift+Z or Ctrl+Y → Redo in timeline
+			if (
+				(e.ctrlKey || e.metaKey) &&
+				((e.shiftKey && e.key === "z") || e.key === "y")
+			) {
+				e.preventDefault();
+				if (window.__timelineRedo) window.__timelineRedo();
+				return;
+			}
+
+			// R → Reset timeline view
+			if (e.key === "r" && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				useTimelineViewport.getState().reset();
+				return;
+			}
+
+			// Don't process canvas shortcuts when timeline is focused
+			return;
+		}
+
+		/* ---------- CANVAS UNDO ---------- */
 		if ((e.ctrlKey || e.metaKey) && e.key === "z") {
 			e.preventDefault();
 			usePageStore.getState().undo();

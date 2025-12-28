@@ -1,4 +1,10 @@
-import { CanvasRoot, PageDOMRoot, TopBar, LeftSidebar } from "@axonforge/core";
+import {
+	CanvasRoot,
+	PageDOMRoot,
+	TopBar,
+	LeftSidebar,
+	TimelinePanel,
+} from "@axonforge/core";
 
 const App = () => {
 	return (
@@ -7,6 +13,7 @@ const App = () => {
 			<LeftSidebar />
 			<CanvasRoot />
 			<PageDOMRoot />
+			<TimelinePanel />
 		</div>
 	);
 };
