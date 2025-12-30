@@ -25,6 +25,16 @@ function ensureRepo() {
 	}
 }
 
+// Helper to check if repo has any commits
+function hasCommits() {
+	try {
+		run("git rev-parse HEAD");
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export const editorGit = {
 	init() {
 		ensureRepo();
@@ -43,11 +53,22 @@ export const editorGit = {
 
 	log(limit = 50) {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			return "";
+		}
+
 		return run(`git log --oneline -${limit}`).trim();
 	},
 
 	logStructured(limit = 200) {
 		ensureRepo();
+
+		// Return empty array if no commits exist yet
+		if (!hasCommits()) {
+			console.log("[editorGit] No commits yet, returning empty array");
+			return [];
+		}
 
 		try {
 			const head = run("git rev-parse HEAD").trim();
@@ -129,6 +150,12 @@ export const editorGit = {
 
 	checkout(hash) {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			console.warn("[editor-git] No commits to checkout");
+			return;
+		}
+
 		try {
 			run(`git checkout ${hash}`);
 			console.log(`[editor-git] checked out: ${hash}`);
@@ -141,6 +168,12 @@ export const editorGit = {
 	// Create a new branch from a commit
 	createBranch(hash, branchName) {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			console.warn("[editor-git] No commits to create branch from");
+			return;
+		}
+
 		try {
 			run(`git checkout ${hash}`);
 			run(`git checkout -b ${branchName}`);
@@ -153,6 +186,12 @@ export const editorGit = {
 
 	reset(hash) {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			console.warn("[editor-git] No commits to reset to");
+			return;
+		}
+
 		try {
 			run(`git reset --hard ${hash}`);
 			console.log(`[editor-git] reset to: ${hash}`);
@@ -164,6 +203,12 @@ export const editorGit = {
 
 	revert(hash) {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			console.warn("[editor-git] No commits to revert");
+			return;
+		}
+
 		try {
 			run(`git revert ${hash} --no-edit`);
 			console.log(`[editor-git] reverted: ${hash}`);
@@ -194,6 +239,11 @@ export const editorGit = {
 
 	status() {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			return null;
+		}
+
 		try {
 			return run("git rev-parse HEAD").trim();
 		} catch {
@@ -203,6 +253,11 @@ export const editorGit = {
 
 	getCurrentBranch() {
 		ensureRepo();
+
+		if (!hasCommits()) {
+			return "main";
+		}
+
 		try {
 			return run("git rev-parse --abbrev-ref HEAD").trim();
 		} catch {

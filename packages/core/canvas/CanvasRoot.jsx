@@ -1,4 +1,4 @@
-import { Stage, Layer } from "react-konva";
+import { Stage, Layer, Rect } from "react-konva";
 import { useEffect, useRef } from "react";
 import Grid from "./Grid";
 import { Axes } from "./Axes";
@@ -18,6 +18,7 @@ export function CanvasRoot() {
 
 	const isPanning = useEditorStore((s) => s.isPanning);
 	const clearSelection = useEditorStore((s) => s.clearSelection);
+	const setFocusedSurface = useEditorStore((s) => s.setFocusedSurface);
 
 	/* ---------------- Center origin ---------------- */
 	useEffect(() => {
@@ -50,6 +51,16 @@ export function CanvasRoot() {
 		};
 	}, [isPanning]);
 
+	/* ---------------- Focus canvas on mount and interaction ---------------- */
+	useEffect(() => {
+		// Set canvas as focused when component mounts
+		setFocusedSurface("canvas");
+	}, [setFocusedSurface]);
+
+	// Calculate background rect dimensions in world coordinates
+	const bgSize = 50000; // Large enough to cover viewport at any zoom
+	const bgOffset = -bgSize / 2;
+
 	return (
 		<Stage
 			ref={stageRef}
@@ -60,6 +71,9 @@ export function CanvasRoot() {
 			scaleX={scale}
 			scaleY={scale}
 			onMouseDown={(e) => {
+				// Set canvas as focused surface
+				setFocusedSurface("canvas");
+
 				// Clicked empty canvas → clear selection
 				if (e.target === e.target.getStage()) {
 					clearSelection();
@@ -67,6 +81,16 @@ export function CanvasRoot() {
 			}}
 		>
 			<Layer>
+				{/* Dark theme background - positioned in world coordinates */}
+				<Rect
+					x={bgOffset}
+					y={bgOffset}
+					width={bgSize}
+					height={bgSize}
+					fill="#1a1d23"
+					listening={false}
+				/>
+
 				<Grid />
 				<Axes />
 

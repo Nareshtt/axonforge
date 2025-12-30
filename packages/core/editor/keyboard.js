@@ -34,7 +34,7 @@ export function initKeyboard() {
 			focusedSurface,
 		} = useEditorStore.getState();
 
-		// Shift + T → toggle timeline
+		// Shift + T → toggle timeline (GLOBAL - works anywhere)
 		if (e.shiftKey && e.key.toLowerCase() === "t") {
 			e.preventDefault();
 			useEditorStore.getState().toggleTimeline();
@@ -70,6 +70,8 @@ export function initKeyboard() {
 			// Don't process canvas shortcuts when timeline is focused
 			return;
 		}
+
+		/* ---------- CANVAS CONTROLS (only when canvas is focused) ---------- */
 
 		/* ---------- CANVAS UNDO ---------- */
 		if ((e.ctrlKey || e.metaKey) && e.key === "z") {

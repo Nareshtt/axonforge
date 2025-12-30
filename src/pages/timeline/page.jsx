@@ -1,3 +1,3 @@
 export default function Page() {
-  return <div>timeline</div>;
+	return <div>timeline</div>;
 }
