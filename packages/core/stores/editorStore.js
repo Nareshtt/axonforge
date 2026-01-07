@@ -1,83 +1,70 @@
 import { create } from "zustand";
-
-const STORAGE_KEY = "axonforge:editor-state";
-
-// Load persisted state
-function loadEditorState() {
-	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (!stored) return {};
-		const state = JSON.parse(stored);
-		console.log("[editorStore] Loaded state from localStorage:", state);
-		return state;
-	} catch (err) {
-		console.warn("[editorStore] Failed to load state:", err);
-		return {};
-	}
-}
-
-// Save state to localStorage
-function saveEditorState(state) {
-	try {
-		const toSave = {
-			timelineOpen: state.timelineOpen,
-			focusedSurface: state.focusedSurface,
-		};
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-		console.log("[editorStore] Saved state to localStorage");
-	} catch (err) {
-		console.warn("[editorStore] Failed to save state:", err);
-	}
-}
+import { loadEditorState, saveEditorState } from "./localStorageState";
 
 const persisted = loadEditorState();
 
 export const useEditorStore = create((set, get) => ({
 	// --- MODE ---
-	mode: "view",
+	mode: "view", // "view"/"edit"
 
-	toggleMode: () =>
-		set((s) => ({
-			mode: s.mode === "view" ? "edit" : "view",
-		})),
+	toggleMode() {
+		set((state) => ({
+			mode: state.mode === "view" ? "edit" : "view",
+		}));
+	},
 
 	// --- SELECTION ---
-	selectedPageId: null,
+	selectedPageId: null, // id like 1,2,3,4.../null
 
-	selectPage: (id) => set({ selectedPageId: id }),
-	clearSelection: () => set({ selectedPageId: null }),
+	selectPage(id) {
+		set({ selectedPageId: id });
+	},
+
+	clearSelection() {
+		set({ selectedPageId: null });
+	},
 
 	// --- PAN ---
-	isPanning: false,
-	setIsPanning: (v) => set({ isPanning: v }),
+	isPanning: false, // true/false
 
-	// --- MOVE ---
-	isMoving: false,
-	setIsMoving: (v) =>
-		set({
-			isMoving: v,
-			// Reset axis constraint when exiting move mode
-			axisConstraint: v ? null : null,
-		}),
+	setIsPanning(bool) {
+		set({ isPanning: bool });
+	},
 
 	// --- AXIS CONSTRAINT ---
 	axisConstraint: null, // null | 'x' | 'y'
-	setAxisConstraint: (axis) => set({ axisConstraint: axis }),
 
-	// --- TIMELINE (PERSISTED) ---
-	timelineOpen: persisted.timelineOpen ?? false,
-	toggleTimeline: () => {
-		set((s) => {
-			const newState = { timelineOpen: !s.timelineOpen };
-			saveEditorState({ ...get(), ...newState });
-			return newState;
+	setAxisConstraint(axis) {
+		set({ axisConstraint: axis });
+	},
+
+	// --- MOVE ---
+	isMoving: false,
+
+	setIsMoving(bool) {
+		set({
+			isMoving: bool,
+			// Reset axis constraint when exiting move mode
+			axisConstraint: null,
 		});
 	},
 
+	// --- TIMELINE (PERSISTED) ---
+	timelineOpen: persisted.timelineOpen ?? false, // true/false if null from local storage defaults to false
+
+	toggleTimeline() {
+		set((state) => ({
+			timelineOpen: !state.timelineOpen,
+		}));
+
+		saveEditorState(get());
+	},
+
 	// --- FOCUSED SURFACE (PERSISTED) ---
-	focusedSurface: persisted.focusedSurface ?? "canvas",
-	setFocusedSurface: (v) => {
-		set({ focusedSurface: v });
+	focusedSurface: persisted.focusedSurface ?? "canvas", // "canvas/timeline" from local storage if null then canvas
+
+	setFocusedSurface(surface) {
+		set({ focusedSurface: surface });
 		saveEditorState(get());
 	},
 }));

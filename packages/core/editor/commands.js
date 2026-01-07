@@ -1,5 +1,5 @@
 // In commands.js - add the new command
-import { useViewport } from "../canvas/useViewport";
+import { useViewport } from "../stores/useViewport";
 import { useEditorStore } from "../stores/editorStore";
 import { usePageStore } from "../stores/pageStore";
 
@@ -28,8 +28,6 @@ export const Commands = {
 
 	// --- PAGE OPERATIONS ---
 	snapPageToOrigin(pageId) {
-		console.log("[Commands] snapPageToOrigin:", pageId);
-
 		// Snap the page's center to the workspace origin (0, 0)
 		usePageStore.getState().setPagePosition(pageId, 0, 0);
 

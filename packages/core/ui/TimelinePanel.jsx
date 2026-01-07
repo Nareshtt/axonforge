@@ -48,13 +48,13 @@ export function TimelinePanel() {
 
 				// Calculate circle positions
 				const parentCircle = {
-					x: parent.depth * (COMMIT_WIDTH + HORIZONTAL_SPACING) + COMMIT_WIDTH, // Right side of parent
-					y: parent.branch * VERTICAL_SPACING + COMMIT_HEIGHT / 2, // Center vertically
+					x: parent.depth * (COMMIT_WIDTH + HORIZONTAL_SPACING) + COMMIT_WIDTH,
+					y: parent.branch * VERTICAL_SPACING + COMMIT_HEIGHT / 2,
 				};
 
 				const childCircle = {
-					x: commit.depth * (COMMIT_WIDTH + HORIZONTAL_SPACING), // Left side of child
-					y: commit.branch * VERTICAL_SPACING + COMMIT_HEIGHT / 2, // Center vertically
+					x: commit.depth * (COMMIT_WIDTH + HORIZONTAL_SPACING),
+					y: commit.branch * VERTICAL_SPACING + COMMIT_HEIGHT / 2,
 				};
 
 				newConnections.push({
@@ -74,22 +74,31 @@ export function TimelinePanel() {
 	/* ---------- Wheel zoom handler ---------- */
 	useEffect(() => {
 		const panel = panelRef.current;
-		if (!panel) return;
+		if (!panel) {
+			console.log("[timeline] Panel ref not ready yet");
+			return;
+		}
 
 		const handleWheel = (e) => {
-			if (focusedSurface !== "timeline") return;
-
+			// Always handle wheel on timeline panel, regardless of focus
 			e.preventDefault();
+			e.stopPropagation();
 			const rect = panel.getBoundingClientRect();
 			const cx = e.clientX - rect.left;
 			const cy = e.clientY - rect.top;
 			const factor = e.deltaY > 0 ? 0.9 : 1.1;
+			console.log("[timeline] Wheel zoom:", factor, "at", cx, cy);
 			zoomAt(factor, cx, cy);
 		};
 
+		console.log("[timeline] Attaching wheel event listener");
 		panel.addEventListener("wheel", handleWheel, { passive: false });
-		return () => panel.removeEventListener("wheel", handleWheel);
-	}, [focusedSurface, zoomAt]);
+
+		return () => {
+			console.log("[timeline] Removing wheel event listener");
+			panel.removeEventListener("wheel", handleWheel);
+		};
+	}, [zoomAt]);
 
 	/* ---------- Fetch timeline ---------- */
 	useEffect(() => {
@@ -171,27 +180,18 @@ export function TimelinePanel() {
 			});
 
 			if (res.ok) {
-				const data = await res.json();
+				console.log("[timeline] Checkout successful, reloading...");
 
-				// Update current hash but DON'T clear commits
-				setCurrentHash(hash);
-
-				// Check if we're viewing a past commit
-				const commit = commits.find((c) => c.hash === hash);
-				setIsDetached(!commit?.isHead);
-
-				console.log(
-					"[timeline] Checkout successful, reloading with preserved state"
-				);
-
-				// Reload the page to reflect the checked out state
-				window.location.reload();
+				// Force immediate reload without state updates
+				// Use setTimeout to ensure fetch completes
+				setTimeout(() => {
+					window.location.reload();
+				}, 100);
+			} else {
+				console.error("[timeline] Checkout failed with status:", res.status);
 			}
 		} catch (err) {
 			console.error("[timeline] checkout failed:", err);
-			setCurrentHash(hash);
-			const commit = commits.find((c) => c.hash === hash);
-			setIsDetached(!commit?.isHead);
 		}
 	};
 
@@ -233,8 +233,14 @@ export function TimelinePanel() {
 	return (
 		<div
 			ref={panelRef}
-			onMouseEnter={() => setFocusedSurface("timeline")}
-			onMouseLeave={() => setFocusedSurface("canvas")}
+			onMouseEnter={() => {
+				console.log("[timeline] Mouse entered, setting focus to timeline");
+				setFocusedSurface("timeline");
+			}}
+			onMouseLeave={() => {
+				console.log("[timeline] Mouse left, setting focus to canvas");
+				setFocusedSurface("canvas");
+			}}
 			className="fixed bottom-0 left-0 right-0 h-80 bg-[#0b0b0b] border-t border-neutral-800 z-50 flex flex-col select-none"
 		>
 			{/* Header */}
@@ -418,9 +424,9 @@ export function TimelinePanel() {
 				<div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-neutral-900/80 backdrop-blur-sm rounded-md border border-neutral-800/50">
 					<p className="text-xs text-neutral-500 text-center">
 						<span className="text-neutral-400 font-medium">Scroll</span> to zoom
-						• <span className="text-neutral-400 font-medium">Drag</span> to pan
-						•<span className="text-neutral-400 font-medium ml-2">R</span> to
-						reset view
+						• <span className="text-neutral-400 font-medium">Middle-click</span>{" "}
+						to pan •<span className="text-neutral-400 font-medium ml-2">R</span>{" "}
+						to reset view
 					</p>
 				</div>
 			</div>
@@ -430,6 +436,7 @@ export function TimelinePanel() {
 
 function TimelineNode({ commit, isCurrent, isHead, onCheckout, hasBranches }) {
 	const [showMenu, setShowMenu] = useState(false);
+	const [isCheckingOut, setIsCheckingOut] = useState(false);
 	const menuRef = useRef(null);
 
 	useEffect(() => {
@@ -446,6 +453,12 @@ function TimelineNode({ commit, isCurrent, isHead, onCheckout, hasBranches }) {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [showMenu]);
 
+	const handleCheckout = () => {
+		if (isCurrent || isCheckingOut) return;
+		setIsCheckingOut(true);
+		onCheckout();
+	};
+
 	return (
 		<div
 			className={`
@@ -460,21 +473,10 @@ function TimelineNode({ commit, isCurrent, isHead, onCheckout, hasBranches }) {
 						? "border-neutral-600/50 bg-gradient-to-br from-neutral-800/50 to-neutral-900/50 hover:border-neutral-500/50"
 						: "border-neutral-700/30 bg-gradient-to-br from-neutral-900/30 to-neutral-900/50 hover:border-neutral-600/40"
 				}
+				${isCheckingOut ? "opacity-50 pointer-events-none" : ""}
 			`}
-			onClick={() => !isCurrent && onCheckout()}
+			onClick={handleCheckout}
 		>
-			{/* Left connection circle */}
-			<div
-				className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-neutral-700 border-2 border-neutral-900"
-				style={{ zIndex: 10 }}
-			/>
-
-			{/* Right connection circle */}
-			<div
-				className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 rounded-full bg-neutral-700 border-2 border-neutral-900"
-				style={{ zIndex: 10 }}
-			/>
-
 			{(isHead || isCurrent || hasBranches) && (
 				<div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-medium border shadow-lg flex items-center gap-1 z-20">
 					{hasBranches && <GitMerge size={12} className="text-indigo-400" />}
@@ -540,8 +542,8 @@ function TimelineNode({ commit, isCurrent, isHead, onCheckout, hasBranches }) {
 								<button
 									onClick={(e) => {
 										e.stopPropagation();
-										onCheckout();
 										setShowMenu(false);
+										handleCheckout();
 									}}
 									className="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 flex items-center gap-2"
 								>

@@ -2,7 +2,7 @@ import { Stage, Layer, Rect } from "react-konva";
 import { useEffect, useRef } from "react";
 import Grid from "./Grid";
 import { Axes } from "./Axes";
-import { useViewport } from "./useViewport";
+import { useViewport } from "../stores/useViewport";
 import { useViewportSize } from "./useViewportSize";
 import { useEditorStore } from "../stores/editorStore";
 import { Commands } from "../editor/commands";

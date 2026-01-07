@@ -32,7 +32,6 @@ export async function initPages() {
 	// 🔥 LIVE FILESYSTEM UPDATES
 	if (import.meta.hot) {
 		import.meta.hot.on("pages:update", (fsPages) => {
-			console.log("[client] received pages:update", fsPages);
 
 			usePageStore.setState((state) => {
 				const byId = Object.fromEntries(state.pages.map((p) => [p.id, p]));

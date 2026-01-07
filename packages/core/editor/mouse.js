@@ -1,7 +1,7 @@
 import { Commands } from "./commands";
 import { useEditorStore } from "../stores/editorStore";
 import { usePageStore } from "../stores/pageStore";
-import { useViewport } from "../canvas/useViewport";
+import { useViewport } from "../stores/useViewport";
 import { useTimelineViewport } from "../stores/useTimelineViewport";
 
 let initialized = false;
@@ -23,14 +23,16 @@ export function initMouse() {
 		const { focusedSurface } = useEditorStore.getState();
 
 		/* ---------- TIMELINE PANNING ---------- */
-		if (
-			focusedSurface === "timeline" &&
-			(e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey)))
-		) {
-			e.preventDefault();
-			lastPos = { x: e.clientX, y: e.clientY };
-			panSource = "timeline";
-			document.body.style.cursor = "grabbing";
+		if (focusedSurface === "timeline") {
+			// Middle click or Ctrl/Cmd + Left click
+			if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
+				e.preventDefault();
+				lastPos = { x: e.clientX, y: e.clientY };
+				panSource = "timeline";
+				document.body.style.cursor = "grabbing";
+				return;
+			}
+			// Don't process canvas mouse events when timeline is focused
 			return;
 		}
 

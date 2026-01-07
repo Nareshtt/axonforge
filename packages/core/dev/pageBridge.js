@@ -247,23 +247,67 @@ export function pageBridge() {
 			server.ws.on("pages:rename", (data) => {
 				const { from, to } = data;
 
+				console.log(`[pageBridge] Renaming page: "${from}" → "${to}"`);
+
 				const fromPath = path.join(pagesDir, from);
 				const toPath = path.join(pagesDir, to);
 
-				if (!fs.existsSync(fromPath) || fs.existsSync(toPath)) return;
+				// Validation
+				if (!fs.existsSync(fromPath)) {
+					console.error(`[pageBridge] Source path does not exist: ${fromPath}`);
+					return;
+				}
 
-				fs.renameSync(fromPath, toPath);
+				if (fs.existsSync(toPath)) {
+					console.error(`[pageBridge] Target path already exists: ${toPath}`);
+					return;
+				}
 
+				// Perform the rename
+				try {
+					fs.renameSync(fromPath, toPath);
+					console.log(`[pageBridge] Filesystem rename successful`);
+				} catch (err) {
+					console.error(`[pageBridge] Filesystem rename failed:`, err);
+					return;
+				}
+
+				// Update snapshot
 				const pages = readPages(pagesDir);
 				writeSnapshot({ pages });
 
-				editorGit.commit(`Rename page "${from}" → "${to}"`);
+				// Handle git commit (only if we have commits)
+				try {
+					const currentHash = editorGit.status();
 
+					if (currentHash) {
+						// We have commits, check branch state
+						const branch = editorGit.getCurrentBranch();
+						if (branch === "HEAD") {
+							// We're in detached HEAD, create a new branch
+							const branchName = `branch-${Date.now()}`;
+							console.log(
+								`[pageBridge] Creating branch ${branchName} from detached HEAD`
+							);
+							editorGit.createBranch(currentHash, branchName);
+						}
+					}
+
+					// Commit the change
+					editorGit.commit(`Rename page "${from}" → "${to}"`);
+				} catch (err) {
+					console.warn("[pageBridge] Git commit warning:", err.message);
+					// Don't fail the rename if git fails
+				}
+
+				// Notify client
 				server.ws.send({
 					type: "custom",
 					event: "pages:update",
 					data: pages,
 				});
+
+				console.log(`[pageBridge] Rename completed successfully`);
 			});
 
 			/* ---------- WATCH FS ---------- */
@@ -276,23 +320,27 @@ export function pageBridge() {
 				writeSnapshot({ pages });
 				const pageName = path.basename(filePath);
 
-				// Check if we're in detached HEAD state
+				// Handle git commit (only if we have commits)
 				try {
-					const branch = editorGit.getCurrentBranch();
-					if (branch === "HEAD") {
-						// We're in detached HEAD, create a new branch
-						const branchName = `branch-${Date.now()}`;
-						const currentHash = editorGit.status();
-						console.log(
-							`[pageBridge] Creating branch ${branchName} from detached HEAD`
-						);
-						editorGit.createBranch(currentHash, branchName);
-					}
-				} catch (err) {
-					console.warn("[pageBridge] Could not check branch state:", err);
-				}
+					const currentHash = editorGit.status();
 
-				editorGit.commit(`Add page "${pageName}"`);
+					if (currentHash) {
+						// We have commits, check branch state
+						const branch = editorGit.getCurrentBranch();
+						if (branch === "HEAD") {
+							// We're in detached HEAD, create a new branch
+							const branchName = `branch-${Date.now()}`;
+							console.log(
+								`[pageBridge] Creating branch ${branchName} from detached HEAD`
+							);
+							editorGit.createBranch(currentHash, branchName);
+						}
+					}
+
+					editorGit.commit(`Add page "${pageName}"`);
+				} catch (err) {
+					console.warn("[pageBridge] Git commit warning:", err.message);
+				}
 
 				server.ws.send({
 					type: "custom",
@@ -308,23 +356,27 @@ export function pageBridge() {
 				writeSnapshot({ pages });
 				const pageName = path.basename(filePath);
 
-				// Check if we're in detached HEAD state
+				// Handle git commit (only if we have commits)
 				try {
-					const branch = editorGit.getCurrentBranch();
-					if (branch === "HEAD") {
-						// We're in detached HEAD, create a new branch
-						const branchName = `branch-${Date.now()}`;
-						const currentHash = editorGit.status();
-						console.log(
-							`[pageBridge] Creating branch ${branchName} from detached HEAD`
-						);
-						editorGit.createBranch(currentHash, branchName);
-					}
-				} catch (err) {
-					console.warn("[pageBridge] Could not check branch state:", err);
-				}
+					const currentHash = editorGit.status();
 
-				editorGit.commit(`Delete page "${pageName}"`);
+					if (currentHash) {
+						// We have commits, check branch state
+						const branch = editorGit.getCurrentBranch();
+						if (branch === "HEAD") {
+							// We're in detached HEAD, create a new branch
+							const branchName = `branch-${Date.now()}`;
+							console.log(
+								`[pageBridge] Creating branch ${branchName} from detached HEAD`
+							);
+							editorGit.createBranch(currentHash, branchName);
+						}
+					}
+
+					editorGit.commit(`Delete page "${pageName}"`);
+				} catch (err) {
+					console.warn("[pageBridge] Git commit warning:", err.message);
+				}
 
 				server.ws.send({
 					type: "custom",
