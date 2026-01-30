@@ -45,8 +45,6 @@ export function initMouse() {
 			if (e.button === 0) {
 				e.preventDefault();
 				e.stopPropagation();
-
-				console.log("[mouse] Confirming move");
 				setIsMoving(false);
 				setAxisConstraint(null);
 				lastPos = null;
@@ -59,7 +57,6 @@ export function initMouse() {
 
 			// Right click → prepare to cancel (actual cancel happens on mouseup)
 			if (e.button === 2) {
-				console.log("[mouse] Right-click detected, will cancel on mouseup");
 				e.preventDefault();
 				e.stopPropagation();
 				return false;
@@ -103,7 +100,6 @@ export function initMouse() {
 					.pages.find((p) => p.id === selectedPageId);
 				if (page) {
 					moveStartPosition = { cx: page.cx, cy: page.cy };
-					console.log("[mouse] Saved start position:", moveStartPosition);
 				}
 			}
 
@@ -160,11 +156,6 @@ export function initMouse() {
 			e.preventDefault();
 			e.stopPropagation();
 
-			console.log(
-				"[mouse] Canceling move, restoring position:",
-				moveStartPosition
-			);
-
 			if (moveStartPosition) {
 				usePageStore
 					.getState()
@@ -173,7 +164,6 @@ export function initMouse() {
 						moveStartPosition.cx,
 						moveStartPosition.cy
 					);
-				console.log("[mouse] Position restored");
 			}
 
 			setIsMoving(false);
@@ -194,7 +184,6 @@ export function initMouse() {
 	const onContextMenu = (e) => {
 		const { isMoving } = useEditorStore.getState();
 		if (isMoving) {
-			console.log("[mouse] Blocking context menu during move");
 			e.preventDefault();
 			e.stopPropagation();
 			return false;
@@ -206,6 +195,4 @@ export function initMouse() {
 	document.addEventListener("mousemove", onMouseMove, false);
 	document.addEventListener("mouseup", onMouseUp, true);
 	document.addEventListener("contextmenu", onContextMenu, true);
-
-	console.log("[mouse] Mouse handlers initialized");
 }
