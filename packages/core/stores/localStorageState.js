@@ -83,8 +83,21 @@ export function saveViewport(state) {
    Page positions persistence (cx, cy)
    ========================================================= */
 
-export function loadPagePositions() {
-	return loadFromStorage(STORAGE_KEY.pagePositions, {});
+export function loadPagePositions(validPageIds = null) {
+	const allPositions = loadFromStorage(STORAGE_KEY.pagePositions, {});
+	
+	if (!validPageIds) {
+		return allPositions;
+	}
+	
+	const validIds = new Set(validPageIds);
+	const filtered = {};
+	for (const [id, pos] of Object.entries(allPositions)) {
+		if (validIds.has(id)) {
+			filtered[id] = pos;
+		}
+	}
+	return filtered;
 }
 
 export function savePagePositions(pages) {
@@ -95,6 +108,25 @@ export function savePagePositions(pages) {
 		}
 		saveToStorage(STORAGE_KEY.pagePositions, positions);
 	} catch {}
+}
+
+export function cleanupPagePositions(validPageIds) {
+	const allPositions = loadFromStorage(STORAGE_KEY.pagePositions, {});
+	const validIds = new Set(validPageIds);
+	let hasChanges = false;
+	const cleaned = {};
+	
+	for (const [id, pos] of Object.entries(allPositions)) {
+		if (validIds.has(id)) {
+			cleaned[id] = pos;
+		} else {
+			hasChanges = true;
+		}
+	}
+	
+	if (hasChanges) {
+		saveToStorage(STORAGE_KEY.pagePositions, cleaned);
+	}
 }
 
 /* =========================================================

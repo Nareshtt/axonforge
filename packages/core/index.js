@@ -1,9 +1,9 @@
-export { PageDOMRoot } from "./page/PageDOMRoot";
-export { initPages } from "./page/initPages";
-export { CanvasRoot } from "./canvas/CanvasRoot";
-export { useEditorStore } from "./stores/editorStore";
-export { initKeyboard } from "./editor/keyboard";
-export { initMouse } from "./editor/mouse";
-export { TopBar } from "./ui/TopBar";
-export { LeftSidebar } from "./ui/LeftSidebar";
-export { TimelinePanel } from "./ui/TimelinePanel";
+export { PageDOMRoot, initPages } from './page';
+export { CanvasRoot } from './canvas/CanvasRoot';
+export { useEditorStore } from './stores/editorStore';
+export { initKeyboard } from './editor/keyboard';
+export { initMouse } from './editor/mouse';
+
+export { TopBar } from './features/topbar';
+export { Sidebar as LeftSidebar } from './features/sidebar';
+export { TimelinePanel } from './features/timeline';

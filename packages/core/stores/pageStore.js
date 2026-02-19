@@ -5,6 +5,7 @@ import {
 	popHistory,
 	savePagePositions,
 	loadPagePositions,
+	cleanupPagePositions,
 } from "./localStorageState";
 import { snapshot } from "./utils";
 
@@ -18,8 +19,11 @@ export const usePageStore = create((set, get) => ({
 	/* ---------------- Init / Set ---------------- */
 
 	setPages(pages) {
-		// 🔑 Restore saved positions
-		const savedPositions = loadPagePositions();
+		const pageIds = pages.map(p => p.id);
+		
+		cleanupPagePositions(pageIds);
+		
+		const savedPositions = loadPagePositions(pageIds);
 
 		const pagesWithPositions = pages.map((page) =>
 			savedPositions[page.id] ? { ...page, ...savedPositions[page.id] } : page

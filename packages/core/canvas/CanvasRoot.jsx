@@ -7,7 +7,7 @@ import { useViewportSize } from "./useViewportSize";
 import { useEditorStore } from "../stores/editorStore";
 import { Commands } from "../editor/commands";
 import { usePageStore } from "../stores/pageStore";
-import { PageInstance } from "../page/pageInstance";
+import { PageInstance } from "../page";
 
 export function CanvasRoot() {
 	const stageRef = useRef(null);

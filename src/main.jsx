@@ -6,6 +6,11 @@ import { initKeyboard } from "@axonforge/core";
 import { initMouse } from "@axonforge/core"; // Add this
 import { initPages } from "@axonforge/core";
 
+if (window.location.search.includes('clear=all')) {
+  localStorage.clear();
+  window.location.search = '';
+}
+
 initPages();
 initKeyboard();
 initMouse(); // Initialize here

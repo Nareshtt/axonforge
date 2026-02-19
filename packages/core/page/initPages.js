@@ -1,66 +1,98 @@
-import { PAGE_PRESETS } from "./pageConfig";
-import { usePageStore } from "../stores/pageStore";
+import { usePageStore } from '../stores/pageStore';
+import { DEFAULT_PRESET, PAGE_SPACING } from './config/presets';
+import { loadPagePositions, cleanupPagePositions, savePagePositions } from '../stores/localStorageState';
+
+function getRightmostPosition(pages) {
+  if (!pages || pages.length === 0) {
+    return 0;
+  }
+
+  let max = 0;
+  for (const page of pages) {
+    if (page && typeof page.cx === 'number' && page.cx > max) {
+      max = page.cx;
+    }
+  }
+  return max + DEFAULT_PRESET.width + PAGE_SPACING;
+}
 
 export async function initPages() {
-	const res = await fetch("/__pages");
-	const registry = await res.json();
+  const res = await fetch('/__pages');
+  const fsPages = await res.json();
 
-	const preset = PAGE_PRESETS.desktop;
+  const savedPages = usePageStore.getState().pages;
+  
+  const fsPageIds = new Set(fsPages.map(p => p.id));
+  const validSavedPages = savedPages.filter(p => fsPageIds.has(p.id));
 
-	let cx = 0; // logical center position in workspace
+  const pages = fsPages.map((page) => {
+    const saved = validSavedPages.find(p => p.id === page.id);
 
-	const pages = registry.map((p) => {
-		const page = {
-			...p,
+    if (saved && saved.cx !== undefined) {
+      return {
+        ...page,
+        width: saved.width || DEFAULT_PRESET.width,
+        height: saved.height || DEFAULT_PRESET.height,
+        cx: saved.cx,
+        cy: saved.cy ?? 0,
+      };
+    }
 
-			// page size (editor-owned)
-			width: preset.width,
-			height: preset.height,
+    const nextCx = getRightmostPosition(validSavedPages);
 
-			// logical workspace position (CENTER-based)
-			cx,
-			cy: 0,
-		};
+    return {
+      ...page,
+      width: DEFAULT_PRESET.width,
+      height: DEFAULT_PRESET.height,
+      cx: nextCx,
+      cy: 0,
+    };
+  });
 
-		cx += preset.width + 200; // stagger pages horizontally
-		return page;
-	});
+  usePageStore.getState().setPages(pages);
 
-	// 👇 IMPORTANT: this will also compute page.render
-	usePageStore.getState().setPages(pages);
+  if (import.meta.hot) {
+    import.meta.hot.on('pages:update', (newFsPages) => {
+      const newFsPageIds = new Set(newFsPages.map(p => p.id));
+      
+      cleanupPagePositions(newFsPageIds);
+      
+      usePageStore.setState((state) => {
+        const existingPages = state.pages.filter(p => newFsPageIds.has(p.id));
+        
+        const merged = newFsPages.map((fsPage) => {
+          const existing = existingPages.find(p => p.id === fsPage.id);
 
-	// 🔥 LIVE FILESYSTEM UPDATES
-	if (import.meta.hot) {
-		import.meta.hot.on("pages:update", (fsPages) => {
-			usePageStore.setState((state) => {
-				const byId = Object.fromEntries(state.pages.map((p) => [p.id, p]));
-				const byName = Object.fromEntries(state.pages.map((p) => [p.name, p]));
+          if (existing && existing.cx !== undefined) {
+            return {
+              ...fsPage,
+              width: existing.width || DEFAULT_PRESET.width,
+              height: existing.height || DEFAULT_PRESET.height,
+              cx: existing.cx,
+              cy: existing.cy ?? 0,
+            };
+          }
 
-				const merged = fsPages.map((fsPage) => {
-					// Try to find existing page by ID (if folder name unchanged)
-					let existing = byId[fsPage.id];
+          const nextCx = getRightmostPosition(existingPages);
 
-					// If not found by ID, try to find by name (if folder was renamed)
-					if (!existing) {
-						existing = byName[fsPage.id]; // fsPage.id is the new folder name
-					}
+          return {
+            ...fsPage,
+            width: DEFAULT_PRESET.width,
+            height: DEFAULT_PRESET.height,
+            cx: nextCx,
+            cy: 0,
+          };
+        });
 
-					return {
-						...fsPage,
-						// Preserve display name if we had it, otherwise use folder name
-						name: existing?.name ?? fsPage.id,
-						width: existing?.width ?? preset.width,
-						height: existing?.height ?? preset.height,
-						cx: existing?.cx ?? 0,
-						cy: existing?.cy ?? 0,
-					};
-				});
+        return { pages: merged };
+      });
 
-				return { pages: merged };
-			});
-
-			// Recompute transforms
-			usePageStore.getState().updateTransforms();
-		});
-	}
+      usePageStore.getState().updateTransforms();
+      savePagePositions(usePageStore.getState().pages);
+    });
+  }
 }
+
+export { PageDOM } from './components/PageDOM';
+export { PageDOMRoot } from './components/PageDOMRoot';
+export { PageInstance } from './components/PageInstance';
