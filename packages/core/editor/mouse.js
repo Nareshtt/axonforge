@@ -20,12 +20,12 @@ export function initMouse() {
 	let panSource = null;
 
 	const onMouseDown = (e) => {
-		const { focusedSurface } = useEditorStore.getState();
+		const { focusedSurface, isTimelinePanning } = useEditorStore.getState();
 
 		/* ---------- TIMELINE PANNING ---------- */
 		if (focusedSurface === "timeline") {
-			// Middle click or Ctrl/Cmd + Left click
-			if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
+			// Middle click or left click when keyboard initiated timeline pan
+			if (e.button === 1 || (e.button === 0 && isTimelinePanning)) {
 				e.preventDefault();
 				lastPos = { x: e.clientX, y: e.clientY };
 				panSource = "timeline";
@@ -73,7 +73,29 @@ export function initMouse() {
 	};
 
 	const onMouseMove = (e) => {
-		/* ---------- TIMELINE PANNING ---------- */
+		const { focusedSurface } = useEditorStore.getState();
+
+		/* ---------- TIMELINE PANNING (Keyboard triggered - no click needed) ---------- */
+		if (focusedSurface === "timeline") {
+			const { isTimelinePanning } = useEditorStore.getState();
+
+			// When Ctrl+Shift is pressed (keyboard initiated), track movement without click
+			if (isTimelinePanning) {
+				if (!lastPos) {
+					lastPos = { x: e.clientX, y: e.clientY };
+					return;
+				}
+
+				const dx = e.clientX - lastPos.x;
+				const dy = e.clientY - lastPos.y;
+
+				useTimelineViewport.getState().pan(dx, dy);
+				lastPos = { x: e.clientX, y: e.clientY };
+				return;
+			}
+		}
+
+		/* ---------- TIMELINE PANNING (Mouse triggered) ---------- */
 		if (panSource === "timeline") {
 			if (!lastPos) {
 				lastPos = { x: e.clientX, y: e.clientY };

@@ -31,6 +31,13 @@ export const useEditorStore = create((set, get) => ({
 		set({ isPanning: bool });
 	},
 
+	// --- TIMELINE PAN ---
+	isTimelinePanning: false, // true/false
+
+	setIsTimelinePanning(bool) {
+		set({ isTimelinePanning: bool });
+	},
+
 	// --- AXIS CONSTRAINT ---
 	axisConstraint: null, // null | 'x' | 'y'
 

@@ -6,6 +6,12 @@ import {
 
 const persisted = loadTimelineViewportState();
 
+const MIN_SCALE = 0.1;
+const MAX_SCALE = 2.0;
+const ZOOM_OUT_FACTOR = 0.9;
+const ZOOM_IN_FACTOR = 1.1;
+const LERP_FACTOR = 0.15;
+
 export const useTimelineViewport = create((set, get) => ({
 	/* ---------------- State ---------------- */
 
@@ -21,7 +27,6 @@ export const useTimelineViewport = create((set, get) => ({
 			y: state.y + dy,
 		}));
 
-		// Persist full snapshot (already updated)
 		saveTimelineViewportState(get());
 	},
 
@@ -29,7 +34,11 @@ export const useTimelineViewport = create((set, get) => ({
 
 	zoomAt(factor, cx, cy) {
 		const { x, y, scale } = get();
-		const newScale = Math.max(0.5, Math.min(1.5, scale * factor));
+
+		let newScale = scale * factor;
+
+		if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+		if (newScale > MAX_SCALE) newScale = MAX_SCALE;
 
 		set({
 			scale: newScale,
@@ -37,7 +46,25 @@ export const useTimelineViewport = create((set, get) => ({
 			y: cy - ((cy - y) * newScale) / scale,
 		});
 
-		// Persist full snapshot (already updated)
+		saveTimelineViewportState(get());
+	},
+
+	zoomTo(targetScale, cx, cy) {
+		const { x, y, scale } = get();
+
+		let newScale = targetScale;
+
+		if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+		if (newScale > MAX_SCALE) newScale = MAX_SCALE;
+
+		if (Math.abs(newScale - scale) < 0.0001) return;
+
+		set({
+			scale: newScale,
+			x: cx - ((cx - x) * newScale) / scale,
+			y: cy - ((cy - y) * newScale) / scale,
+		});
+
 		saveTimelineViewportState(get());
 	},
 
@@ -50,7 +77,6 @@ export const useTimelineViewport = create((set, get) => ({
 			scale: 1,
 		});
 
-		// Persist full snapshot
 		saveTimelineViewportState(get());
 	},
 }));

@@ -11,6 +11,7 @@ export function initKeyboard() {
 	initialized = true;
 
 	let isPanKeyActive = false;
+	let panSurface = null; // 'canvas' | 'timeline'
 
 	const onKeyDown = (e) => {
 		if (e.repeat) return;
@@ -43,6 +44,16 @@ export function initKeyboard() {
 
 		/* ---------- TIMELINE-SPECIFIC CONTROLS ---------- */
 		if (focusedSurface === "timeline") {
+			// Ctrl+Shift → Start timeline pan
+			if (e.ctrlKey && e.shiftKey && !isPanKeyActive) {
+				e.preventDefault();
+				isPanKeyActive = true;
+				panSurface = "timeline";
+				useEditorStore.getState().setIsTimelinePanning(true);
+				document.body.style.cursor = "grabbing";
+				return;
+			}
+
 			// Ctrl+Z → Undo in timeline
 			if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
 				e.preventDefault();
@@ -84,6 +95,7 @@ export function initKeyboard() {
 		if (e.ctrlKey && e.shiftKey && !isPanKeyActive) {
 			e.preventDefault();
 			isPanKeyActive = true;
+			panSurface = "canvas";
 			Commands.panStart();
 			return;
 		}
@@ -170,8 +182,16 @@ export function initKeyboard() {
 	const onKeyUp = (e) => {
 		if ((e.key === "Control" || e.key === "Shift") && isPanKeyActive) {
 			isPanKeyActive = false;
+			document.body.style.cursor = "default";
 			resetMousePosition();
-			Commands.panEnd();
+
+			if (panSurface === "timeline") {
+				useEditorStore.getState().setIsTimelinePanning(false);
+				panSurface = null;
+			} else if (panSurface === "canvas") {
+				Commands.panEnd();
+				panSurface = null;
+			}
 		}
 	};
 

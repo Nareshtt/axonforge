@@ -10,12 +10,16 @@ const COMMIT_HEIGHT = 100;
 const HORIZONTAL_SPACING = 120;
 const VERTICAL_SPACING = 140;
 
+const ZOOM_OUT_FACTOR = 0.9;
+const ZOOM_IN_FACTOR = 1.1;
+const LERP_FACTOR = 0.15;
+
 export function TimelinePanel() {
   const open = useEditorStore((s) => s.timelineOpen);
   const toggleTimeline = useEditorStore((s) => s.toggleTimeline);
   const setFocusedSurface = useEditorStore((s) => s.setFocusedSurface);
 
-  const { x, y, scale, zoomAt } = useTimelineViewport();
+  const { x, y, scale, zoomAt, zoomTo } = useTimelineViewport();
 
   const {
     commits,
@@ -33,6 +37,12 @@ export function TimelinePanel() {
   } = useTimelineData();
 
   const panelRef = useRef(null);
+  const zoomTarget = useRef({
+    scale: scale,
+    x: 0,
+    y: 0,
+    active: false,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -46,11 +56,20 @@ export function TimelinePanel() {
     const handleWheel = (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      if (!zoomTarget.current.active) {
+        zoomTarget.current.scale = useTimelineViewport.getState().scale;
+        zoomTarget.current.active = true;
+      }
+
       const rect = panel.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
-      const factor = e.deltaY > 0 ? 0.9 : 1.1;
-      zoomAt(factor, cx, cy);
+
+      const factor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
+      zoomTarget.current.scale *= factor;
+      zoomTarget.current.x = cx;
+      zoomTarget.current.y = cy;
     };
 
     panel.addEventListener('wheel', handleWheel, { passive: false });
@@ -58,7 +77,37 @@ export function TimelinePanel() {
     return () => {
       panel.removeEventListener('wheel', handleWheel);
     };
-  }, [zoomAt]);
+  }, []);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const onTick = () => {
+      const currentScale = useTimelineViewport.getState().scale;
+
+      if (!zoomTarget.current.active) {
+        zoomTarget.current.scale = currentScale;
+        return;
+      }
+
+      const { scale: targetScale, x: mx, y: my } = zoomTarget.current;
+
+      if (Math.abs(targetScale - currentScale) < 0.001) {
+        zoomTarget.current.active = false;
+        zoomTarget.current.scale = currentScale;
+        return;
+      }
+
+      zoomTarget.current.active = true;
+      const newScale = currentScale + (targetScale - currentScale) * LERP_FACTOR;
+      zoomTo(newScale, mx, my);
+    };
+
+    const intervalId = setInterval(onTick, 16);
+
+    return () => clearInterval(intervalId);
+  }, [zoomTo]);
 
   if (!open) return null;
 
