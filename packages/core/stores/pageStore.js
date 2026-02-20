@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { useViewport } from "./useViewport";
 import {
 	pushHistory,
 	popHistory,
@@ -19,10 +18,10 @@ export const usePageStore = create((set, get) => ({
 	/* ---------------- Init / Set ---------------- */
 
 	setPages(pages) {
-		const pageIds = pages.map(p => p.id);
-		
+		const pageIds = pages.map((p) => p.id);
+
 		cleanupPagePositions(pageIds);
-		
+
 		const savedPositions = loadPagePositions(pageIds);
 
 		const pagesWithPositions = pages.map((page) =>
@@ -32,7 +31,6 @@ export const usePageStore = create((set, get) => ({
 		set({ pages: pagesWithPositions });
 
 		pushHistory(snapshot(pagesWithPositions));
-		get().updateTransforms();
 	},
 
 	/* ---------------- Move ---------------- */
@@ -40,14 +38,11 @@ export const usePageStore = create((set, get) => ({
 	movePageBy(pageId, dx, dy) {
 		set((state) => ({
 			pages: state.pages.map((page) =>
-				page.id === pageId
-					? { ...page, cx: page.cx + dx, cy: page.cy + dy }
-					: page
+				page.id === pageId ?
+					{ ...page, cx: page.cx + dx, cy: page.cy + dy }
+				:	page
 			),
 		}));
-
-		get().updateTransforms();
-		// Note: don't save on every move
 	},
 
 	setPagePosition(pageId, cx, cy) {
@@ -57,7 +52,6 @@ export const usePageStore = create((set, get) => ({
 			),
 		}));
 
-		get().updateTransforms();
 		savePagePositions(get().pages);
 	},
 
@@ -80,24 +74,13 @@ export const usePageStore = create((set, get) => ({
 			),
 		}));
 
-		get().updateTransforms();
 		savePagePositions(get().pages);
 	},
 
 	/* ---------------- Derived / Renderid ---------------- */
 
-	updateTransforms() {
-		const { x, y, scale } = useViewport.getState();
+	/* ---------------- Derived / Rendered ---------------- */
 
-		set((state) => ({
-			pages: state.pages.map((page) => ({
-				...page,
-				render: {
-					x: x + page.cx * scale - (page.width * scale) / 2,
-					y: y + page.cy * scale - (page.height * scale) / 2,
-					scale,
-				},
-			})),
-		}));
-	},
+	/* No-op: PageDOM now computes its transform inline from useViewport. */
+	updateTransforms() {},
 }));

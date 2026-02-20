@@ -17,25 +17,25 @@ export function ConnectionLines({ connections, canvasWidth, canvasHeight }) {
           <g key={conn.id}>
             <path
               d={`M ${conn.from.x} ${conn.from.y} C ${midX} ${conn.from.y}, ${midX} ${conn.to.y}, ${conn.to.x} ${conn.to.y}`}
-              stroke={conn.isBranch ? '#8b5cf6' : '#6b7280'}
-              strokeWidth="2"
+              stroke={conn.isBranch ? '#6366f1' : '#333'}
+              strokeWidth="1.5"
               fill="none"
-              opacity="0.6"
+              opacity="0.5"
               strokeLinecap="round"
             />
             <circle
               cx={conn.from.x}
               cy={conn.from.y}
-              r="5"
-              fill={conn.isBranch ? '#8b5cf6' : '#6b7280'}
-              opacity="0.8"
+              r="3"
+              fill={conn.isBranch ? '#6366f1' : '#333'}
+              opacity="0.6"
             />
             <circle
               cx={conn.to.x}
               cy={conn.to.y}
-              r="5"
-              fill={conn.isBranch ? '#8b5cf6' : '#6b7280'}
-              opacity="0.8"
+              r="3"
+              fill={conn.isBranch ? '#6366f1' : '#333'}
+              opacity="0.6"
             />
           </g>
         );

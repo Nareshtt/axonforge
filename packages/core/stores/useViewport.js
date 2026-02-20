@@ -1,20 +1,21 @@
 import { create } from "zustand";
-import { usePageStore } from "./pageStore";
 import { loadViewport, saveViewport } from "./localStorageState";
+
+const DEFAULT_SCALE = 0.4;
 
 const persisted = loadViewport();
 
 export const useViewport = create((set, get) => ({
-	/* ---------------- State ---------------- */
-
 	x: persisted?.x ?? 0,
 	y: persisted?.y ?? 0,
-	scale: persisted?.scale ?? 0.3,
+	scale: persisted?.scale ?? DEFAULT_SCALE,
 
-	/* ---------------- Center ---------------- */
+	setViewport(x, y, scale) {
+		set({ x, y, scale });
+		saveViewport(get());
+	},
 
 	setCenter(width, height) {
-		// ⚠️ Do NOT overwrite persisted viewport if user already moved
 		const { x, y } = get();
 		if (x !== 0 || y !== 0) return;
 
@@ -23,14 +24,9 @@ export const useViewport = create((set, get) => ({
 			y: height / 2,
 		});
 
-		// Persist full snapshot
 		saveViewport(get());
-
-		// Update derived page transforms
-		usePageStore.getState().updateTransforms();
 	},
 
-	/* ---------------- Pan ---------------- */
 	pan(dx, dy) {
 		set((state) => ({
 			x: state.x + dx,
@@ -38,14 +34,21 @@ export const useViewport = create((set, get) => ({
 		}));
 
 		saveViewport(get());
-		usePageStore.getState().updateTransforms();
 	},
-
-	/* ---------------- Zoom ---------------- */
 
 	zoomAt(factor, cx, cy) {
 		const { x, y, scale } = get();
-		const newScale = scale * factor;
+		const MIN_SCALE = 0.05;
+		const MAX_SCALE = 5.0;
+
+		let newScale = scale * factor;
+
+		// Clamp scale
+		if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+		if (newScale > MAX_SCALE) newScale = MAX_SCALE;
+
+		// If scale didn't change (hit limit), don't update position
+		if (newScale === scale) return;
 
 		set({
 			scale: newScale,
@@ -53,9 +56,53 @@ export const useViewport = create((set, get) => ({
 			y: cy - ((cy - y) * newScale) / scale,
 		});
 
-		// Persist full snapshot (already updated)
 		saveViewport(get());
+	},
 
-		usePageStore.getState().updateTransforms();
+	zoomTo(targetScale, cx, cy) {
+		const { x, y, scale } = get();
+		const MIN_SCALE = 0.05;
+		const MAX_SCALE = 5.0;
+
+		let newScale = targetScale;
+
+		// Clamp scale
+		if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+		if (newScale > MAX_SCALE) newScale = MAX_SCALE;
+
+		// If scale didn't change (hit limit), don't update position
+		if (Math.abs(newScale - scale) < 0.0001) return;
+
+		set({
+			scale: newScale,
+			x: cx - ((cx - x) * newScale) / scale,
+			y: cy - ((cy - y) * newScale) / scale,
+		});
+
+		saveViewport(get());
+	},
+
+	focusOnPage(page, screenWidth, screenHeight) {
+		const pageCenterX = page.cx ?? 0;
+		const pageCenterY = page.cy ?? 0;
+		const targetScale = DEFAULT_SCALE;
+
+		// Center the viewport on the page center
+		// viewport x,y is where the origin (0,0) of world space is on screen
+		// To center page center on screen: screenCenter = viewport + pageCenter * scale
+		// screenCenter = (screenWidth/2, screenHeight/2)
+		// x = screenWidth/2 - pageCenterX * scale
+		// y = screenHeight/2 - pageCenterY * scale
+
+		const newX = screenWidth / 2 - pageCenterX * targetScale;
+		const newY = screenHeight / 2 - pageCenterY * targetScale;
+
+		set({
+			x: newX,
+			y: newY,
+			scale: targetScale,
+		});
+
+		saveViewport(get());
 	},
 }));

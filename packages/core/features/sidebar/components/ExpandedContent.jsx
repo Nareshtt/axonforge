@@ -11,6 +11,7 @@ export function ExpandedContent({
   pages,
   selectedPageId,
   onSelectPage,
+  onFocusPage,
   onCreatePage,
   creatingPage,
   newPageName,
@@ -29,7 +30,7 @@ export function ExpandedContent({
         rightAction={
           <button
             onClick={onCreatePage}
-            className="w-6 h-6 flex items-center justify-center rounded hover:bg-neutral-800 text-neutral-400"
+            className="w-5 h-5 flex items-center justify-center rounded hover:bg-[#1a1a1a] text-[#666] hover:text-white transition-colors"
             title="Add Page"
           >
             <PlusIcon />
@@ -42,6 +43,7 @@ export function ExpandedContent({
             page={page}
             active={page.id === selectedPageId}
             onSelect={() => onSelectPage(page.id)}
+            onDoubleClick={() => onFocusPage(page.id)}
             onDelete={() => onDeletePage(page.id)}
           />
         ))}
@@ -57,7 +59,7 @@ export function ExpandedContent({
         )}
       </SidebarSection>
 
-      <div className="h-px bg-neutral-800/50 mx-2" />
+      <div className="h-px bg-[#1f1f1f] mx-2" />
 
       <SidebarSection
         title="Layers"
@@ -65,7 +67,7 @@ export function ExpandedContent({
         expanded={layersExpanded}
         onToggle={onToggleLayers}
       >
-        <div className="px-3 py-1.5 text-neutral-500 text-sm">Coming soon</div>
+        <div className="px-3 py-1.5 text-[#444] text-xs">Coming soon</div>
       </SidebarSection>
     </div>
   );

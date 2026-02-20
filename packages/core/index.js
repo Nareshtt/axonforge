@@ -1,5 +1,5 @@
 export { PageDOMRoot, initPages } from './page';
-export { CanvasRoot } from './canvas/CanvasRoot';
+export { PixiCanvas as CanvasRoot } from './canvas/PixiCanvas';
 export { useEditorStore } from './stores/editorStore';
 export { initKeyboard } from './editor/keyboard';
 export { initMouse } from './editor/mouse';

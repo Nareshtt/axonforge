@@ -1,10 +1,10 @@
 export function ViewportHint() {
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-neutral-900/80 backdrop-blur-sm rounded-md border border-neutral-800/50">
-      <p className="text-xs text-neutral-500 text-center">
-        <span className="text-neutral-400 font-medium">Scroll</span> to zoom
-        • <span className="text-neutral-400 font-medium">Middle-click</span> to pan •
-        <span className="text-neutral-400 font-medium ml-2">R</span> to reset view
+    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[#0a0a0a]/80 backdrop-blur-sm rounded border border-[#1f1f1f]">
+      <p className="text-[10px] text-[#444] text-center">
+        <span className="text-[#666]">Scroll</span> to zoom
+        • <span className="text-[#666]">Middle-click</span> to pan
+        • <span className="text-[#666] ml-1">R</span> to reset
       </p>
     </div>
   );

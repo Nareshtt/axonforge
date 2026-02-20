@@ -95,4 +95,3 @@ export async function initPages() {
 
 export { PageDOM } from './components/PageDOM';
 export { PageDOMRoot } from './components/PageDOMRoot';
-export { PageInstance } from './components/PageInstance';

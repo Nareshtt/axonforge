@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePageStore } from '../../../stores/pageStore';
 import { useEditorStore } from '../../../stores/editorStore';
+import { useViewport } from '../../../stores/useViewport';
 import { useSidebarState } from '../hooks/useSidebarState';
 import { SidebarHeader } from './SidebarHeader';
 import { CollapsedIcons } from './CollapsedIcons';
 import { ExpandedContent } from './ExpandedContent';
 import { ResizeHandle } from './ResizeHandle';
 import { DeleteModal } from './DeleteModal';
+
+const DEFAULT_ZOOM = 0.4;
 
 export function Sidebar() {
   const {
@@ -29,6 +32,35 @@ export function Sidebar() {
   const pages = usePageStore((s) => s.pages);
   const selectedPageId = useEditorStore((s) => s.selectedPageId);
   const selectPage = useEditorStore((s) => s.selectPage);
+  const mode = useEditorStore((s) => s.mode);
+
+  const handleSelectPage = useCallback(
+    (pageId) => {
+      selectPage(pageId);
+    },
+    [selectPage]
+  );
+
+  const handleFocusPage = useCallback(
+    (pageId) => {
+      if (mode !== 'view') return;
+
+      const page = pages.find((p) => p.id === pageId);
+      if (!page) return;
+
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+
+      const pageCenterX = page.cx ?? 0;
+      const pageCenterY = page.cy ?? 0;
+
+      const newX = screenWidth / 2 - pageCenterX * DEFAULT_ZOOM;
+      const newY = screenHeight / 2 - pageCenterY * DEFAULT_ZOOM;
+
+      useViewport.getState().setViewport(newX, newY, DEFAULT_ZOOM);
+    },
+    [pages, mode]
+  );
 
   const handleCreatePage = () => {
     setCreatingPage(true);
@@ -68,7 +100,7 @@ export function Sidebar() {
     <>
       <div
         ref={sidebarRef}
-        className="fixed top-12 left-0 bottom-0 bg-[#111] border-r border-neutral-800 text-neutral-300 text-sm select-none z-40"
+        className="fixed top-10 left-0 bottom-0 bg-black border-r border-[#1f1f1f] text-[#888] text-sm select-none z-40"
         style={{
           width,
           transition: isResizing ? 'none' : 'width 0.2s ease',
@@ -86,7 +118,8 @@ export function Sidebar() {
             onToggleLayers={() => setLayersExpanded(!layersExpanded)}
             pages={pages}
             selectedPageId={selectedPageId}
-            onSelectPage={selectPage}
+            onSelectPage={handleSelectPage}
+            onFocusPage={handleFocusPage}
             onCreatePage={handleCreatePage}
             creatingPage={creatingPage}
             newPageName={newPageName}

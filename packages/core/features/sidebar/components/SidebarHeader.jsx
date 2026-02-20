@@ -2,22 +2,22 @@ import { ChevronLeft } from 'lucide-react';
 
 export function SidebarHeader({ visuallyCollapsed, onToggle }) {
   return (
-    <div className="h-10 flex items-center justify-between px-2 border-b border-neutral-800/50">
+    <div className="h-10 flex items-center justify-between px-3 border-b border-[#1f1f1f]">
       {!visuallyCollapsed && (
-        <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-[#666] uppercase tracking-wider">
           Explorer
         </span>
       )}
 
       <button
         onClick={onToggle}
-        className={`w-7 h-7 rounded hover:bg-neutral-800 ${
+        className={`w-6 h-6 flex items-center justify-center rounded hover:bg-[#1a1a1a] transition-colors ${
           visuallyCollapsed ? 'mx-auto' : ''
         }`}
       >
         <ChevronLeft
-          size={16}
-          className={visuallyCollapsed ? 'rotate-180' : ''}
+          size={14}
+          className={`text-[#666] ${visuallyCollapsed ? 'rotate-180' : ''}`}
         />
       </button>
     </div>

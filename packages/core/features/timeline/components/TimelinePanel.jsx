@@ -67,7 +67,7 @@ export function TimelinePanel() {
       ref={panelRef}
       onMouseEnter={() => setFocusedSurface('timeline')}
       onMouseLeave={() => setFocusedSurface('canvas')}
-      className="fixed bottom-0 left-0 right-0 h-80 bg-[#0b0b0b] border-t border-neutral-800 z-50 flex flex-col select-none"
+      className="fixed bottom-0 left-0 right-0 h-72 bg-black border-t border-[#1f1f1f] z-50 flex flex-col select-none"
     >
       <TimelineHeader
         commits={commits}
