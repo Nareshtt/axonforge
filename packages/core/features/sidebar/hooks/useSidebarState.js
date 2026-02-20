@@ -22,22 +22,27 @@ function saveSidebarState(state) {
 export function useSidebarState() {
   const persisted = loadSidebarState();
 
-  const [width, setWidth] = useState(persisted?.width ?? DEFAULT_WIDTH);
+  const isCollapsedFromStorage = persisted?.isCollapsed ?? false;
+  const lastExpandedWidth = persisted?.lastExpandedWidth ?? DEFAULT_WIDTH;
+
+  const [width, setWidth] = useState(isCollapsedFromStorage ? ICON_RAIL_WIDTH : lastExpandedWidth);
+  const [isCollapsed, setIsCollapsed] = useState(isCollapsedFromStorage);
   const [isResizing, setIsResizing] = useState(false);
   const [pagesExpanded, setPagesExpanded] = useState(persisted?.pagesExpanded ?? true);
   const [layersExpanded, setLayersExpanded] = useState(persisted?.layersExpanded ?? true);
 
   const sidebarRef = useRef(null);
-  const lastExpandedWidthRef = useRef(persisted?.lastExpandedWidth ?? DEFAULT_WIDTH);
+  const lastExpandedWidthRef = useRef(lastExpandedWidth);
 
-  const saveState = useCallback(() => {
+  const saveState = useCallback((collapsedToSave) => {
     saveSidebarState({
-      width,
+      width: collapsedToSave ? ICON_RAIL_WIDTH : lastExpandedWidthRef.current,
+      isCollapsed: collapsedToSave,
       lastExpandedWidth: lastExpandedWidthRef.current,
       pagesExpanded,
       layersExpanded,
     });
-  }, [width, pagesExpanded, layersExpanded]);
+  }, [pagesExpanded, layersExpanded]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -56,7 +61,7 @@ export function useSidebarState() {
     const onMouseUp = () => {
       setIsResizing(false);
       document.body.style.cursor = 'default';
-      saveState();
+      saveState(isCollapsed);
     };
 
     document.addEventListener('mousemove', onMouseMove);
@@ -75,14 +80,17 @@ export function useSidebarState() {
   }, []);
 
   const toggleSidebar = useCallback(() => {
-    const nextWidth = width <= ICON_RAIL_WIDTH + 1
-      ? lastExpandedWidthRef.current
-      : ICON_RAIL_WIDTH;
-    setWidth(nextWidth);
-    saveState();
-  }, [width, saveState]);
+    const nextCollapsed = !isCollapsed;
+    setIsCollapsed(nextCollapsed);
+    if (nextCollapsed) {
+      setWidth(ICON_RAIL_WIDTH);
+    } else {
+      setWidth(lastExpandedWidthRef.current);
+    }
+    saveState(nextCollapsed);
+  }, [isCollapsed, saveState]);
 
-  const visuallyCollapsed = width <= ICON_RAIL_WIDTH + 1;
+  const visuallyCollapsed = isCollapsed;
 
   return {
     width,

@@ -18,11 +18,11 @@ export function TopBar() {
 
 function LogoSection() {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1">
       <img
         src={logo}
         alt="AxonForge"
-        className="h-9 w-auto"
+        className="h-16 w-auto"
       />
     </div>
   );
@@ -30,7 +30,7 @@ function LogoSection() {
 
 function MenuSection() {
   return (
-    <div className="flex items-center gap-1 ml-8">
+    <div className="flex items-center gap-1 ml-3">
       {MENU_ITEMS.map((item) => (
         <MenuItem key={item} label={item} />
       ))}
