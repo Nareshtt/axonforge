@@ -68,10 +68,20 @@ export const useEditorStore = create((set, get) => ({
 	},
 
 	// --- FOCUSED SURFACE (PERSISTED) ---
-	focusedSurface: persisted.focusedSurface ?? "canvas", // "canvas/timeline" from local storage if null then canvas
+	focusedSurface: persisted.focusedSurface ?? "canvas", // "canvas"/"timeline"/"sidebar" from local storage if null then canvas
 
 	setFocusedSurface(surface) {
 		set({ focusedSurface: surface });
+		saveEditorState(get());
+	},
+	
+	focusOnSidebar() {
+		set({ focusedSurface: "sidebar" });
+		saveEditorState(get());
+	},
+	
+	focusOnCanvas() {
+		set({ focusedSurface: "canvas" });
 		saveEditorState(get());
 	},
 }));

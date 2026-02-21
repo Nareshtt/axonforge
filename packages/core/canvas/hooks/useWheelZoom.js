@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useViewport } from "../../stores/useViewport";
+import { useEditorStore } from "../../stores/editorStore";
 
 const ZOOM_OUT_FACTOR = 0.9;
 const ZOOM_IN_FACTOR = 1.1;
@@ -18,6 +19,12 @@ export function useWheelZoom(app) {
 		if (!app) return;
 
 		const onWheel = (e) => {
+			// Skip zoom when sidebar or timeline is focused
+			const { focusedSurface } = useEditorStore.getState();
+			if (focusedSurface === "sidebar" || focusedSurface === "timeline") {
+				return; // Allow default scroll behavior
+			}
+
 			e.preventDefault();
 			const { scale } = useViewport.getState();
 

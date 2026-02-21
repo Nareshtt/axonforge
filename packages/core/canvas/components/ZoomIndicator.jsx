@@ -44,7 +44,7 @@ export function ZoomIndicator() {
 
 	return (
 		<div
-			className="fixed top-14 right-4 bg-[#0a0a0a] text-[#888] px-3 py-1.5 rounded text-xs font-medium border border-[#1f1f1f] flex items-center gap-3 select-none z-50 pointer-events-auto"
+			className="fixed bottom-4 left-4 bg-[#0a0a0a] text-[#888] px-3 py-1.5 rounded text-xs font-medium border border-[#1f1f1f] flex items-center gap-3 select-none z-50 pointer-events-auto"
 			style={{ fontFamily: "Inter, sans-serif" }}
 		>
 			<button

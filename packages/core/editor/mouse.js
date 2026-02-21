@@ -22,6 +22,12 @@ export function initMouse() {
 	const onMouseDown = (e) => {
 		const { focusedSurface, isTimelinePanning } = useEditorStore.getState();
 
+		/* ---------- TIMELINE/SIDEBAR FOCUS - Skip canvas events ---------- */
+		if (focusedSurface === "timeline" || focusedSurface === "sidebar") {
+			// Don't process canvas mouse events when sidebar or timeline is focused
+			return;
+		}
+
 		/* ---------- TIMELINE PANNING ---------- */
 		if (focusedSurface === "timeline") {
 			// Middle click or left click when keyboard initiated timeline pan

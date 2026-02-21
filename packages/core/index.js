@@ -6,4 +6,5 @@ export { initMouse } from './editor/mouse';
 
 export { TopBar } from './features/topbar';
 export { Sidebar as LeftSidebar } from './features/sidebar';
+export { RightSidebar } from './features/properties';
 export { TimelinePanel } from './features/timeline';

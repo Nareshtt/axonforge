@@ -3,6 +3,7 @@ import {
 	PageDOMRoot,
 	TopBar,
 	LeftSidebar,
+	RightSidebar,
 	TimelinePanel,
 } from "@axonforge/core";
 
@@ -13,6 +14,7 @@ const App = () => {
 			<LeftSidebar />
 			<CanvasRoot />
 			<PageDOMRoot />
+			<RightSidebar />
 			<TimelinePanel />
 		</div>
 	);
