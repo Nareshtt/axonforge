@@ -141,7 +141,7 @@ const getTextAlignIcon = (value) => {
   }
 };
 
-export function TypographySection({ properties, addClass }) {
+export function TypographySection({ properties, addClass, isOpen, onToggle }) {
   const fontSizeValue = properties.selectedClasses.fontSize || "";
 
   const getWeightDisplay = (option) => {
@@ -150,7 +150,7 @@ export function TypographySection({ properties, addClass }) {
   };
 
   return (
-    <Section title="Typography" icon={Type}>
+    <Section title="Typography" icon={Type} isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-6">
         {/* Font Size */}
         <SizeControls

@@ -93,7 +93,7 @@ function GridControls({ label, value, onChange, quickOptions }) {
   );
 }
 
-export function LayoutSection({ properties, addClass }) {
+export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
   const displayType = properties.selectedClasses.display || "block";
   
   const colValue = properties.selectedClasses.gridTemplateColumns;
@@ -125,7 +125,7 @@ export function LayoutSection({ properties, addClass }) {
   };
 
   return (
-    <Section title="Layout" icon={Layout}>
+    <Section title="Layout" icon={Layout} isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-6">
         <div className="space-y-2">
           <span className="text-xs font-medium text-[#71717a]">Display</span>

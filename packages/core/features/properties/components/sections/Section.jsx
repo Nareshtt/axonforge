@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-export function Section({ title, children, defaultOpen = true, icon: Icon }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+export function Section({ title, children, defaultOpen = true, icon: Icon, isOpen: controlledIsOpen, onToggle: controlledOnToggle }) {
+  const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
+  
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = controlledOnToggle ? controlledOnToggle : setInternalIsOpen;
 
   return (
     <div className="border-b border-[#27272a]">

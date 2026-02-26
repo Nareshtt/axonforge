@@ -87,7 +87,7 @@ function OpacityControls({ label, value, onChange, quickOptions }) {
   );
 }
 
-export function EffectsSection({ properties, addClass }) {
+export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
   const getBorderStyleIcon = (value) => {
     const opt = BORDER_STYLES.find(o => o.value === value);
     if (!opt || !opt.icon) return null;
@@ -96,7 +96,7 @@ export function EffectsSection({ properties, addClass }) {
   };
 
   return (
-    <Section title="Effects" icon={Sparkles}>
+    <Section title="Effects" icon={Sparkles} isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-6">
         {/* Shadows */}
         <div className="space-y-2">

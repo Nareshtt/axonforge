@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRightSidebarState } from "../hooks/useRightSidebarState";
 import { useEditorStore } from "../../../stores/editorStore";
 import { usePageStore } from "../../../stores/pageStore";
@@ -12,6 +12,10 @@ import {
   Palette,
   Maximize2,
   Sparkles,
+  Ruler,
+  LayoutGrid,
+  Move,
+  Box,
 } from "lucide-react";
 
 import { Button } from "./ui/Button";
@@ -20,8 +24,18 @@ import {
   LayoutSection,
   TypographySection,
   SpacingSection,
+  ColorSection,
   EffectsSection,
 } from "./sections";
+
+const SECTION_ICONS = [
+  { key: "sizing", icon: Ruler, label: "Sizing" },
+  { key: "layout", icon: LayoutGrid, label: "Layout" },
+  { key: "spacing", icon: Move, label: "Spacing" },
+  { key: "typography", icon: Type, label: "Typography" },
+  { key: "color", icon: Palette, label: "Color" },
+  { key: "effects", icon: Sparkles, label: "Effects" },
+];
 
 function SidebarHeader({ isCollapsed, onToggle, mode, hasSelection }) {
   return (
@@ -71,23 +85,21 @@ function SidebarHeader({ isCollapsed, onToggle, mode, hasSelection }) {
   );
 }
 
-function CollapsedContent() {
+function CollapsedContent({ onSectionClick, focusedSection }) {
   return (
     <div className="flex flex-col items-center gap-1 py-3">
-      {[
-        { icon: Layers, label: "Layers" },
-        { icon: Type, label: "Typography" },
-        { icon: Image, label: "Appearance" },
-      ].map(({ icon: Icon, label }) => (
+      {SECTION_ICONS.map(({ key, icon: Icon, label }) => (
         <button
-          key={label}
-          className="
+          key={key}
+          onClick={() => onSectionClick(key)}
+          className={`
             w-10 h-10 flex items-center justify-center
-            text-[#71717a] hover:text-[#e4e4e7]
-            hover:bg-[#27272a] rounded-lg
-            transition-all duration-200
-            group relative
-          "
+            rounded-lg transition-all duration-200 group relative
+            ${focusedSection === key 
+              ? "bg-[#6366f1] text-white" 
+              : "text-[#6366f1] hover:bg-[#27272a] hover:text-[#e4e4e7]"
+            }
+          `}
           title={label}
         >
           <Icon size={18} />
@@ -164,22 +176,74 @@ function ExportSection() {
   );
 }
 
-function PropertiesPanel({ selectedPage, mode, hasSelection, properties, updateProperty, addClass }) {
+function PropertiesPanel({ selectedPage, mode, hasSelection, properties, updateProperty, addClass, focusedSection, onSectionToggle }) {
   if (mode !== "edit" || !hasSelection) {
     return <EmptyState mode={mode} hasSelection={hasSelection} />;
   }
 
+  const isSectionOpen = (key) => {
+    return focusedSection ? focusedSection === key : true;
+  };
+
+  const handleSectionToggle = (key) => {
+    if (focusedSection) {
+      onSectionToggle(focusedSection === key ? null : key);
+    } else {
+      onSectionToggle(key);
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto pb-4">
-      <SizingSection
-        properties={properties}
-        updateProperty={updateProperty}
-        addClass={addClass}
-      />
-      <LayoutSection properties={properties} addClass={addClass} />
-      <SpacingSection properties={properties} addClass={addClass} />
-      <TypographySection properties={properties} addClass={addClass} />
-      <EffectsSection properties={properties} addClass={addClass} />
+      <div data-section="sizing">
+        <SizingSection
+          properties={properties}
+          updateProperty={updateProperty}
+          addClass={addClass}
+          isOpen={isSectionOpen("sizing")}
+          onToggle={() => handleSectionToggle("sizing")}
+        />
+      </div>
+      <div data-section="layout">
+        <LayoutSection 
+          properties={properties} 
+          addClass={addClass}
+          isOpen={isSectionOpen("layout")}
+          onToggle={() => handleSectionToggle("layout")}
+        />
+      </div>
+      <div data-section="spacing">
+        <SpacingSection 
+          properties={properties} 
+          addClass={addClass}
+          isOpen={isSectionOpen("spacing")}
+          onToggle={() => handleSectionToggle("spacing")}
+        />
+      </div>
+      <div data-section="typography">
+        <TypographySection 
+          properties={properties} 
+          addClass={addClass}
+          isOpen={isSectionOpen("typography")}
+          onToggle={() => handleSectionToggle("typography")}
+        />
+      </div>
+      <div data-section="color">
+        <ColorSection 
+          properties={properties} 
+          addClass={addClass}
+          isOpen={isSectionOpen("color")}
+          onToggle={() => handleSectionToggle("color")}
+        />
+      </div>
+      <div data-section="effects">
+        <EffectsSection 
+          properties={properties} 
+          addClass={addClass}
+          isOpen={isSectionOpen("effects")}
+          onToggle={() => handleSectionToggle("effects")}
+        />
+      </div>
       <ExportSection />
     </div>
   );
@@ -232,6 +296,45 @@ export function RightSidebar() {
     }));
   };
 
+  const [focusedSection, setFocusedSection] = useState(null);
+
+  useEffect(() => {
+    if (isCollapsed) {
+      setFocusedSection(null);
+    }
+  }, [isCollapsed]);
+
+  const handleSectionClick = (key) => {
+    if (isCollapsed) {
+      setFocusedSection(key);
+      toggleSidebar();
+      setTimeout(() => {
+        const container = document.querySelector('[data-sidebar] .flex-1.overflow-y-auto');
+        const sectionElement = document.querySelector(`[data-section="${key}"]`);
+        if (container && sectionElement) {
+          container.scrollTo({
+            top: sectionElement.offsetTop,
+            behavior: 'smooth'
+          });
+        }
+      }, 300);
+    } else {
+      setFocusedSection(focusedSection === key ? null : key);
+      if (focusedSection !== key) {
+        setTimeout(() => {
+          const container = document.querySelector('[data-sidebar] .flex-1.overflow-y-auto');
+          const sectionElement = document.querySelector(`[data-section="${key}"]`);
+          if (container && sectionElement) {
+            container.scrollTo({
+              top: sectionElement.offsetTop,
+              behavior: 'smooth'
+            });
+          }
+        }, 50);
+      }
+    }
+  };
+
   const handleSidebarClick = (e) => {
     e.stopPropagation();
     focusOnSidebar();
@@ -240,6 +343,12 @@ export function RightSidebar() {
   const handleSidebarMouseEnter = () => {
     focusOnSidebar();
   };
+
+  const shouldShowSidebar = mode === "edit" && hasSelection;
+  
+  if (!shouldShowSidebar) {
+    return null;
+  }
 
   return (
     <div
@@ -266,7 +375,10 @@ export function RightSidebar() {
       />
 
       {isCollapsed ? (
-        <CollapsedContent />
+        <CollapsedContent 
+          onSectionClick={handleSectionClick}
+          focusedSection={focusedSection} 
+        />
       ) : (
         <PropertiesPanel
           selectedPage={selectedPage}
@@ -275,6 +387,8 @@ export function RightSidebar() {
           properties={properties}
           updateProperty={updateProperty}
           addClass={addClass}
+          focusedSection={focusedSection}
+          onSectionToggle={handleSectionClick}
         />
       )}
 

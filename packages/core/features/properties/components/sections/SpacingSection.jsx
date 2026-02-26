@@ -154,7 +154,7 @@ function SpacingControls({ type, spacing, onChange }) {
   );
 }
 
-export function SpacingSection({ properties, addClass }) {
+export function SpacingSection({ properties, addClass, isOpen, onToggle }) {
   const [activeType, setActiveType] = useState("padding");
   const spacing = properties.selectedClasses;
 
@@ -163,7 +163,7 @@ export function SpacingSection({ properties, addClass }) {
   };
 
   return (
-    <Section title="Spacing" icon={AlignHorizontalSpaceBetween}>
+    <Section title="Spacing" icon={AlignHorizontalSpaceBetween} isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-4">
         {/* Type selector */}
         <div className="flex gap-2">

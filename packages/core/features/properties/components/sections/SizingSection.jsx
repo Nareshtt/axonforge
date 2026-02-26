@@ -2,7 +2,7 @@ import { Ruler } from "lucide-react";
 import { Section } from "./Section";
 import { NumberInput, Toggle, Select } from "../ui";
 
-export function SizingSection({ properties, updateProperty, addClass }) {
+export function SizingSection({ properties, updateProperty, addClass, isOpen, onToggle }) {
   const width = properties.width || 100;
   const height = properties.height || 100;
 
@@ -22,7 +22,7 @@ export function SizingSection({ properties, updateProperty, addClass }) {
   };
 
   return (
-    <Section title="Sizing" icon={Ruler}>
+    <Section title="Sizing" icon={Ruler} isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-6">
         {/* Width - full width */}
         <div className="space-y-2">
