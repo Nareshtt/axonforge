@@ -1,6 +1,6 @@
 export default function Page() {
   return (
-    <div className="flex flex-col justify-center items-center w-full h-full bg-[#040303ff] text-[#ffffffff] text-base px-20">
+    <div className="flex flex-col justify-center items-center w-full h-full bg-[linear-gradient(306deg,_#0E0F16ff_13%,_#b11536ff_100%)] text-[#ffffffff] text-base px-20">
 			{/* Hero Section Container */}
 			<div className="flex absolute flex-col inset-0">
 				{/* Nav Bar */}

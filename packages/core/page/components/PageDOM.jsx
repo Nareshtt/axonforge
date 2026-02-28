@@ -78,6 +78,13 @@ export function PageDOM({ page, viewport }) {
 
 		const path = getElementPath(rootEl, targetEl);
 		if (!path) return;
+		if (path.length === 0) {
+			// Clicking the page root selects the page (not a nested element).
+			e.stopPropagation();
+			selectPage(page.id);
+			clearElementSelection();
+			return;
+		}
 
 		if (debug) {
 			console.log("[select]", {
@@ -106,7 +113,7 @@ export function PageDOM({ page, viewport }) {
 			return;
 		}
 		const path = getElementPath(rootEl, targetEl);
-		setHoveredElementPath(path);
+		setHoveredElementPath(path && path.length > 0 ? path : null);
 	};
 
 	// Handle page container pointerdown

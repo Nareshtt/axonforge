@@ -104,6 +104,7 @@ export function LayersTree() {
 	const selectedElementPath = useEditorStore((s) => s.selectedElementPath);
 	const selectElementPath = useEditorStore((s) => s.selectElementPath);
 	const selectPage = useEditorStore((s) => s.selectPage);
+	const clearElementSelection = useEditorStore((s) => s.clearElementSelection);
 
 	const [tree, setTree] = useState(null);
 	const [expandedMap, setExpandedMap] = useState({});
@@ -127,6 +128,10 @@ export function LayersTree() {
 	const onSelect = (path) => {
 		if (!selectedPageId) return;
 		selectPage(selectedPageId);
+		if (!Array.isArray(path) || path.length === 0) {
+			clearElementSelection();
+			return;
+		}
 		selectElementPath(path);
 	};
 

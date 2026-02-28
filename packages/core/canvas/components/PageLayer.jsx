@@ -13,7 +13,7 @@ const BORDER_WIDTH = 2;
 const LABEL_OFFSET_X = 8;
 const LABEL_OFFSET_Y = -64;
 
-export function PageLayer({ app, pages, selectedPageId, selectedElementPath, mode, onSelectPage }) {
+export function PageLayer({ app, pages, selectedPageId, mode, onSelectPage }) {
 	const containerRef = useRef(null);
 
 	// 1. Mount container once
@@ -129,7 +129,7 @@ export function PageLayer({ app, pages, selectedPageId, selectedElementPath, mod
 			const text = pageContainer.children.find((c) => c.label === "text");
 			if (text) {
 				const baseName = page.name || page.id;
-				const showCode = mode === "edit" && isSelected && !selectedElementPath;
+				const showCode = mode === "edit" && isSelected;
 				const fullString = showCode ? `</> ${baseName}` : baseName;
 				// Cache metrics if changed
 				if (text.fullText !== fullString) {
@@ -147,6 +147,16 @@ export function PageLayer({ app, pages, selectedPageId, selectedElementPath, mod
 			// Update Interaction
 			// In Pixi v8, use pointer events (not `onclick`).
 			bg.removeAllListeners("pointerdown");
+			const labelText = pageContainer.children.find((c) => c.label === "text");
+			if (labelText) {
+				labelText.removeAllListeners("pointerdown");
+				labelText.eventMode = "static";
+				labelText.cursor = "pointer";
+				labelText.on("pointerdown", (e) => {
+					e.stopPropagation();
+					onSelectPage(page.id);
+				});
+			}
 			if (mode === "view") {
 				bg.eventMode = "static";
 				bg.cursor = "pointer";

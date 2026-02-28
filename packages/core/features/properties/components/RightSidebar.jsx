@@ -406,7 +406,8 @@ export function RightSidebar() {
 	}, [selectedPageId, pages]);
 
 	const hasSelection = selectedPageId !== null;
-	const selectionType = selectedElementPath ? "element" : hasSelection ? "page" : null;
+	const hasElementSelection = Array.isArray(selectedElementPath) && selectedElementPath.length > 0;
+	const selectionType = hasElementSelection ? "element" : hasSelection ? "page" : null;
 
 	const [pageClassName, setPageClassName] = useState("");
 	const [elementClassName, setElementClassName] = useState("");
@@ -434,11 +435,11 @@ export function RightSidebar() {
 
 	useEffect(() => {
 		if (!selectedPageId) return;
-		loadSelectionContent(selectedPageId, selectedElementPath);
-	}, [selectedPageId, selectedElementPath, loadSelectionContent]);
+		loadSelectionContent(selectedPageId, hasElementSelection ? selectedElementPath : null);
+	}, [selectedPageId, selectedElementPath, hasElementSelection, loadSelectionContent]);
 
 	useEffect(() => {
-		if (!selectedElementPath) {
+		if (!hasElementSelection) {
 			setElementInfo(null);
 			return;
 		}
@@ -466,7 +467,7 @@ export function RightSidebar() {
 			tagName: (el.tagName || "").toLowerCase(),
 			inputType: (el.getAttribute("type") || "").toLowerCase(),
 		});
-	}, [selectedElementPath, selectedPageId]);
+	}, [hasElementSelection, selectedElementPath, selectedPageId]);
 
 	const pageSelectedClasses = useMemo(() => parseClassName(pageClassName), [pageClassName]);
 	const elementSelectedClasses = useMemo(
@@ -512,7 +513,7 @@ export function RightSidebar() {
 	const writeClassNamesBatch = useCallback(
 		async ({ target, updates }) => {
 			if (!selectedPageId) return;
-			if (target === "element" && !selectedElementPath) return;
+			if (target === "element" && !hasElementSelection) return;
 			if (!updates || typeof updates !== "object") return;
 
 			const current = target === "page" ? pageClassName : elementClassName;
@@ -559,7 +560,7 @@ export function RightSidebar() {
 				console.error("Failed to update className (batch):", err);
 			}
 		},
-		[debug, selectedPageId, selectedElementPath, pageClassName, elementClassName]
+		[debug, selectedPageId, selectedElementPath, hasElementSelection, pageClassName, elementClassName]
 	);
 
 	const addElementClasses = useCallback(
@@ -578,7 +579,7 @@ export function RightSidebar() {
 	const writeClassName = useCallback(
 		async ({ target, category, className }) => {
 			if (!selectedPageId) return;
-			if (target === "element" && !selectedElementPath) return;
+			if (target === "element" && !hasElementSelection) return;
 
 			const current = target === "page" ? pageClassName : elementClassName;
 			const rawList = (current || "").split(/\s+/).filter(Boolean);
@@ -624,7 +625,7 @@ export function RightSidebar() {
 				console.error("Failed to update className:", err);
 			}
 		},
-		[debug, selectedPageId, selectedElementPath, pageClassName, elementClassName]
+		[debug, selectedPageId, selectedElementPath, hasElementSelection, pageClassName, elementClassName]
 	);
 
 	const addPageClass = useCallback(

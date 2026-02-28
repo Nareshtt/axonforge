@@ -35,7 +35,6 @@ export function PixiCanvas() {
 
 	const pages = usePageStore((s) => s.pages);
 	const selectedPageId = useEditorStore((s) => s.selectedPageId);
-	const selectedElementPath = useEditorStore((s) => s.selectedElementPath);
 	const selectPage = useEditorStore((s) => s.selectPage);
 	const isPanning = useEditorStore((s) => s.isPanning);
 	const clearSelection = useEditorStore((s) => s.clearSelection);
@@ -75,7 +74,6 @@ export function PixiCanvas() {
 						app={app}
 						pages={pages}
 						selectedPageId={selectedPageId}
-						selectedElementPath={selectedElementPath}
 						mode={mode}
 						onSelectPage={selectPage}
 					/>

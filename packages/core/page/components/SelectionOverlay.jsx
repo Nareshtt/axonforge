@@ -44,8 +44,16 @@ export function SelectionOverlay() {
 
 		let raf = 0;
 		const update = () => {
-			const el = selectedElementPath ? getElementByPath(container, selectedElementPath) : null;
-			const hoverEl = hoveredElementPath ? getElementByPath(container, hoveredElementPath) : null;
+			const selPath =
+				Array.isArray(selectedElementPath) && selectedElementPath.length > 0
+					? selectedElementPath
+					: null;
+			const hovPath =
+				Array.isArray(hoveredElementPath) && hoveredElementPath.length > 0
+					? hoveredElementPath
+					: null;
+			const el = selPath ? getElementByPath(container, selPath) : null;
+			const hoverEl = hovPath ? getElementByPath(container, hovPath) : null;
 
 			setSelectedRect(el ? rectToStyle(el.getBoundingClientRect()) : null);
 			setHoverRect(
