@@ -19,7 +19,7 @@ export const useEditorStore = create((set, get) => ({
 	hoveredElementPath: null,
 
 	selectPage(id) {
-		set({ selectedPageId: id });
+		set({ selectedPageId: id, selectedElementPath: null, hoveredElementPath: null });
 	},
 
 	selectElementPath(path) {
@@ -28,6 +28,12 @@ export const useEditorStore = create((set, get) => ({
 
 	setHoveredElementPath(path) {
 		set({ hoveredElementPath: path });
+	},
+
+	// --- UI LAYOUT ---
+	leftSidebarWidth: 48,
+	setLeftSidebarWidth(width) {
+		set({ leftSidebarWidth: width });
 	},
 
 	clearSelection() {

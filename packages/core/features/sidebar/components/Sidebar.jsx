@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePageStore } from '../../../stores/pageStore';
 import { useEditorStore } from '../../../stores/editorStore';
 import { useViewport } from '../../../stores/useViewport';
@@ -33,6 +33,13 @@ export function Sidebar() {
   const selectedPageId = useEditorStore((s) => s.selectedPageId);
   const selectPage = useEditorStore((s) => s.selectPage);
   const mode = useEditorStore((s) => s.mode);
+  const setLeftSidebarWidth = useEditorStore((s) => s.setLeftSidebarWidth);
+
+  // Publish width so canvas overlays can avoid overlapping the sidebar
+  // (Zoom indicator, etc.)
+  useEffect(() => {
+    setLeftSidebarWidth(width);
+  }, [width, setLeftSidebarWidth]);
 
   const selectedPage = pages.find((p) => p.id === selectedPageId);
   const pageProperties = selectedPage || null;

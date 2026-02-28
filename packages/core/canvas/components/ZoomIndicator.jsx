@@ -9,6 +9,8 @@ export function ZoomIndicator() {
 	const y = useViewport((s) => s.y);
 
 	const selectedPageId = useEditorStore((s) => s.selectedPageId);
+	const timelineOpen = useEditorStore((s) => s.timelineOpen);
+	const leftSidebarWidth = useEditorStore((s) => s.leftSidebarWidth);
 	const pages = usePageStore((s) => s.pages);
 
 	const percentage = Math.round(scale * 100);
@@ -44,8 +46,11 @@ export function ZoomIndicator() {
 
 	return (
 		<div
-			className="fixed bottom-4 left-4 bg-[#0a0a0a] text-[#888] px-3 py-1.5 rounded text-xs font-medium border border-[#1f1f1f] flex items-center gap-3 select-none z-50 pointer-events-auto"
-			style={{ fontFamily: "Inter, sans-serif" }}
+			className="fixed bg-[#0a0a0a] text-[#888] px-3 py-1.5 rounded text-xs font-medium border border-[#1f1f1f] flex items-center gap-3 select-none z-30 pointer-events-auto"
+			style={{
+				left: Math.max(16, (leftSidebarWidth || 0) + 16),
+				bottom: timelineOpen ? 288 + 16 : 16,
+			}}
 		>
 			<button
 				onClick={handleZoomOut}

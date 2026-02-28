@@ -13,7 +13,7 @@ const BORDER_WIDTH = 2;
 const LABEL_OFFSET_X = 8;
 const LABEL_OFFSET_Y = -64;
 
-export function PageLayer({ app, pages, selectedPageId, mode, onSelectPage }) {
+export function PageLayer({ app, pages, selectedPageId, selectedElementPath, mode, onSelectPage }) {
 	const containerRef = useRef(null);
 
 	// 1. Mount container once
@@ -128,7 +128,9 @@ export function PageLayer({ app, pages, selectedPageId, mode, onSelectPage }) {
 			// Update Text
 			const text = pageContainer.children.find((c) => c.label === "text");
 			if (text) {
-				const fullString = page.name || page.id;
+				const baseName = page.name || page.id;
+				const showCode = mode === "edit" && isSelected && !selectedElementPath;
+				const fullString = showCode ? `</> ${baseName}` : baseName;
 				// Cache metrics if changed
 				if (text.fullText !== fullString) {
 					text.text = fullString; // Set temporarily to measure
