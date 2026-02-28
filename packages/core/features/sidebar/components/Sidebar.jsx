@@ -34,6 +34,9 @@ export function Sidebar() {
   const selectPage = useEditorStore((s) => s.selectPage);
   const mode = useEditorStore((s) => s.mode);
 
+  const selectedPage = pages.find((p) => p.id === selectedPageId);
+  const pageProperties = selectedPage || null;
+
   const handleSelectPage = useCallback(
     (pageId) => {
       selectPage(pageId);
@@ -100,6 +103,7 @@ export function Sidebar() {
     <>
       <div
         ref={sidebarRef}
+			data-left-sidebar
         className="fixed top-10 left-0 bottom-0 bg-black border-r border-[#1f1f1f] text-[#888] text-sm select-none z-40"
         style={{
           width,
@@ -109,7 +113,7 @@ export function Sidebar() {
         <SidebarHeader visuallyCollapsed={visuallyCollapsed} onToggle={toggleSidebar} />
 
         {visuallyCollapsed ? (
-          <CollapsedIcons />
+          <CollapsedIcons pageProperties={pageProperties} />
         ) : (
           <ExpandedContent
             pagesExpanded={pagesExpanded}

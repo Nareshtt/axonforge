@@ -20,6 +20,17 @@ function SpacingControls({ type, spacing, onChange }) {
     return match ? parseInt(match[1]) : 0;
   };
 
+  const getArbitraryValue = (key) => {
+    const val = spacing[key];
+    if (!val) return "";
+    // key is like: p, px, py, pt, mt ...
+    if (val.startsWith(`${key}-[`)) {
+      const match = val.match(/\[(.+)\]/);
+      return match ? match[1] : "";
+    }
+    return "";
+  };
+
   const allValue = getValue(prefix);
   const yValue = getValue(prefix + "y");
   const xValue = getValue(prefix + "x");
@@ -34,40 +45,51 @@ function SpacingControls({ type, spacing, onChange }) {
                        scope === "y" ? yValue : 
                        scope === "x" ? xValue : 0;
 
-  const handleChange = (val) => {
+  const currentArbitrary =
+    scope === "all"
+      ? getArbitraryValue(prefix)
+      : scope === "y"
+        ? getArbitraryValue(prefix + "y")
+        : scope === "x"
+          ? getArbitraryValue(prefix + "x")
+          : "";
+
+  const handleChange = (val, isArbitrary = false) => {
     if (scope === "all") {
-      if (val === 0) {
-        onChange(`${prefix}t`, "");
-        onChange(`${prefix}r`, "");
-        onChange(`${prefix}b`, "");
-        onChange(`${prefix}l`, "");
+      if (val === 0 || val === "") {
+        onChange(prefix, "");
+      } else if (isArbitrary) {
+        onChange(prefix, `${prefix}-[${val}]`);
       } else {
-        onChange(`${prefix}t`, `${prefix}t-${val}`);
-        onChange(`${prefix}r`, `${prefix}r-${val}`);
-        onChange(`${prefix}b`, `${prefix}b-${val}`);
-        onChange(`${prefix}l`, `${prefix}l-${val}`);
+        onChange(prefix, `${prefix}-${val}`);
       }
     } else if (scope === "y") {
-      if (val === 0) {
+      if (val === 0 || val === "") {
         onChange(`${prefix}y`, "");
+      } else if (isArbitrary) {
+        onChange(`${prefix}y`, `${prefix}y-[${val}]`);
       } else {
         onChange(`${prefix}y`, `${prefix}y-${val}`);
       }
     } else if (scope === "x") {
-      if (val === 0) {
+      if (val === 0 || val === "") {
         onChange(`${prefix}x`, "");
+      } else if (isArbitrary) {
+        onChange(`${prefix}x`, `${prefix}x-[${val}]`);
       } else {
         onChange(`${prefix}x`, `${prefix}x-${val}`);
       }
     }
   };
 
-  const handleEachChange = (side, val) => {
-    const key = `${prefix}${side}`;
-    if (val === 0) {
+  const handleEachChange = (side, val, isArbitrary = false) => {
+    const key = prefix + side;
+    if (val === 0 || val === "") {
       onChange(key, "");
+    } else if (isArbitrary) {
+      onChange(key, `${key}-[${val}]`);
     } else {
-      onChange(key, `${prefix}${side}-${val}`);
+      onChange(key, `${key}-${val}`);
     }
   };
 
@@ -94,14 +116,23 @@ function SpacingControls({ type, spacing, onChange }) {
 
       {/* Number input */}
       {scope !== "each" ? (
-        <NumberInput
-          value={currentValue}
-          onChange={handleChange}
-          min={0}
-          max={32}
-          showControls={true}
-          className="w-full"
-        />
+        <div className="space-y-2">
+          <NumberInput
+            value={currentValue}
+            onChange={(v) => handleChange(v, false)}
+            min={0}
+            max={999}
+            showControls={true}
+            className="w-full"
+          />
+          <input
+            type="text"
+            placeholder="Custom (e.g. 50px, 2rem)"
+            className="w-full h-10 px-3 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-[#e4e4e7] focus:border-[#6366f1] focus:outline-none"
+            value={currentArbitrary}
+            onChange={(e) => handleChange(e.target.value.replace(/\s/g, ''), true)}
+          />
+        </div>
       ) : (
         <div className="space-y-2">
           <div className="space-y-1.5">
@@ -154,9 +185,9 @@ function SpacingControls({ type, spacing, onChange }) {
   );
 }
 
-export function SpacingSection({ properties, addClass, isOpen, onToggle }) {
-  const [activeType, setActiveType] = useState("padding");
-  const spacing = properties.selectedClasses;
+export function SpacingSection({ sectionProperties: sectionProperties, addClass, isOpen, onToggle, disableMargin = false }) {
+  const [activeType, setActiveType] = useState(disableMargin ? "padding" : "padding");
+  const spacing = sectionProperties?.selectedClasses || {};
 
   const handleChange = (key, value) => {
     addClass(key, value);
@@ -179,18 +210,20 @@ export function SpacingSection({ properties, addClass, isOpen, onToggle }) {
           >
             Padding
           </button>
-          <button
-            onClick={() => setActiveType("margin")}
-            className={`
-              flex-1 h-9 rounded-lg text-sm font-medium transition-all duration-200
-              ${activeType === "margin"
-                ? "bg-[#6366f1] text-white"
-                : "bg-[#18181b] text-[#a1a1aa] hover:text-[#e4e4e7] border border-[#27272a]"
-              }
-            `}
-          >
-            Margin
-          </button>
+          {!disableMargin && (
+            <button
+              onClick={() => setActiveType("margin")}
+              className={`
+                flex-1 h-9 rounded-lg text-sm font-medium transition-all duration-200
+                ${activeType === "margin"
+                  ? "bg-[#6366f1] text-white"
+                  : "bg-[#18181b] text-[#a1a1aa] hover:text-[#e4e4e7] border border-[#27272a]"
+                }
+              `}
+            >
+              Margin
+            </button>
+          )}
         </div>
 
         <SpacingControls

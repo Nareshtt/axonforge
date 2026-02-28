@@ -20,6 +20,14 @@ export function NumberInput({
     setLocalValue(String(value));
   }, [value]);
 
+  const getNumericLocal = useCallback(
+    (fallback = 0) => {
+      const n = parseFloat(localValue);
+      return Number.isFinite(n) ? n : fallback;
+    },
+    [localValue]
+  );
+
   const handleChange = (e) => {
     const val = e.target.value.replace(/[^0-9.-]/g, "");
     setLocalValue(val);
@@ -27,8 +35,10 @@ export function NumberInput({
 
   const handleBlur = () => {
     if (localValue === "" || localValue === "-") {
-      setLocalValue(String(min));
-      onChange(min);
+		// Empty input should not jump to a negative min; treat as 0.
+		const clamped = Math.max(min, Math.min(max, 0));
+		setLocalValue(String(clamped));
+		onChange(clamped);
       return;
     }
     const num = parseFloat(localValue);
@@ -49,11 +59,11 @@ export function NumberInput({
   }, [min, max, onChange]);
 
   const startRepeating = (direction) => {
-    const current = parseFloat(localValue) || min;
+		const current = getNumericLocal(0);
     const stepAmount = direction === "up" ? step : -step;
     
     const update = () => {
-      const currentVal = parseFloat(localValue) || min;
+			const currentVal = getNumericLocal(0);
       const newVal = currentVal + stepAmount;
       if (newVal >= min && newVal <= max) {
         updateValue(newVal);
@@ -89,12 +99,12 @@ export function NumberInput({
   const handleKeyDown = (e) => {
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      const current = parseFloat(localValue) || min;
+			const current = getNumericLocal(0);
       updateValue(Math.min(max, current + step));
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const current = parseFloat(localValue) || min;
+			const current = getNumericLocal(0);
       updateValue(Math.max(min, current - step));
     }
   };

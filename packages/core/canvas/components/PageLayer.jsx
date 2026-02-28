@@ -143,15 +143,18 @@ export function PageLayer({ app, pages, selectedPageId, mode, onSelectPage }) {
 			}
 
 			// Update Interaction
-			// We can just update the onclick if we want, or rely on stored ID
+			// In Pixi v8, use pointer events (not `onclick`).
+			bg.removeAllListeners("pointerdown");
 			if (mode === "view") {
 				bg.eventMode = "static";
-				bg.onclick = (e) => {
+				bg.cursor = "pointer";
+				bg.on("pointerdown", (e) => {
 					e.stopPropagation();
 					onSelectPage(page.id);
-				};
+				});
 			} else {
 				bg.eventMode = "none";
+				bg.cursor = "default";
 			}
 		});
 

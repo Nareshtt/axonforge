@@ -15,13 +15,27 @@ export const useEditorStore = create((set, get) => ({
 
 	// --- SELECTION ---
 	selectedPageId: null, // id like 1,2,3,4.../null
+	selectedElementPath: null, // array of indices from page container to element
+	hoveredElementPath: null,
 
 	selectPage(id) {
 		set({ selectedPageId: id });
 	},
 
+	selectElementPath(path) {
+		set({ selectedElementPath: path });
+	},
+
+	setHoveredElementPath(path) {
+		set({ hoveredElementPath: path });
+	},
+
 	clearSelection() {
-		set({ selectedPageId: null });
+		set({ selectedPageId: null, selectedElementPath: null, hoveredElementPath: null });
+	},
+
+	clearElementSelection() {
+		set({ selectedElementPath: null, hoveredElementPath: null });
 	},
 
 	// --- PAN ---

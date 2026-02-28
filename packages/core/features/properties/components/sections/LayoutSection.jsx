@@ -8,7 +8,7 @@ const DISPLAY_OPTIONS = [
   { value: "grid", label: "Grid" },
   { value: "inline-block", label: "Inline" },
   { value: "inline-flex", label: "Inline Flex" },
-  { value: "none", label: "Hidden" },
+  { value: "hidden", label: "Hidden" },
 ];
 
 const FLEX_DIRECTION = [
@@ -93,13 +93,13 @@ function GridControls({ label, value, onChange, quickOptions }) {
   );
 }
 
-export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
-  const displayType = properties.selectedClasses.display || "block";
+export function LayoutSection({ sectionProperties: sectionProperties, addClass, isOpen, onToggle }) {
+  const displayType = sectionProperties?.selectedClasses?.display || "block";
   
-  const colValue = properties.selectedClasses.gridTemplateColumns;
+  const colValue = sectionProperties?.selectedClasses?.gridTemplateColumns;
   const colNum = colValue ? parseInt(String(colValue).replace(/\D/g, "")) : 1;
   
-  const gapValue = properties.selectedClasses.gap;
+  const gapValue = sectionProperties?.selectedClasses?.gap;
   const gapNum = gapValue ? parseInt(String(gapValue).replace(/\D/g, "")) : 0;
 
   const getJustifyIcon = (value) => {
@@ -140,16 +140,74 @@ export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
         {displayType === "flex" && (
           <div className="space-y-6 pt-2">
             <div className="space-y-2">
+              <span className="text-xs font-medium text-[#71717a]">Flex Grow</span>
+              <NumberInput
+                value={parseInt(sectionProperties.selectedClasses.flex?.replace("flex-", "")) || 0}
+                onChange={(v) => {
+                  addClass("flex", v === 0 ? "" : `flex-${v}`);
+                  addClass("flexGrow", "");
+                }}
+                min={0}
+                max={12}
+                showControls={true}
+                className="w-full"
+              />
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {[1, 2, 3, 4].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => {
+                      addClass("flex", `flex-${num}`);
+                      addClass("flexGrow", "");
+                    }}
+                    className={`
+                      h-9 flex items-center justify-center rounded-lg
+                      text-xs font-medium transition-all duration-200
+                      ${sectionProperties.selectedClasses.flex === `flex-${num}`
+                        ? "bg-[#6366f1] text-white shadow-sm"
+                        : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
+                      }
+                    `}
+                  >
+                    flex-{num}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                placeholder="Custom (e.g. 2, 3, auto)"
+                className="w-full h-10 px-3 mt-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-[#e4e4e7] focus:border-[#6366f1] focus:outline-none"
+                value={sectionProperties.selectedClasses.flex?.replace("flex-", "") || ""}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\s/g, '');
+                  if (val === "auto") {
+                    addClass("flex", "flex-auto");
+                  } else if (val === "none") {
+                    addClass("flex", "flex-none");
+                  } else if (val) {
+                    addClass("flex", `flex-${val}`);
+                  } else {
+                    addClass("flex", "");
+                  }
+                  addClass("flexGrow", "");
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
               <span className="text-xs font-medium text-[#71717a]">Direction</span>
               <div className="grid grid-cols-2 gap-2">
                 {FLEX_DIRECTION.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => addClass("flexDirection", opt.value === properties.selectedClasses.flexDirection ? "" : opt.value)}
+                    onClick={() => {
+                      console.log("🟨 Direction click:", { category: "flexDirection", value: opt.value, current: sectionProperties.selectedClasses });
+                      addClass("flexDirection", opt.value);
+                    }}
                     className={`
                       h-10 px-3 flex items-center justify-center gap-2 rounded-lg
                       text-xs font-medium transition-all duration-200
-                      ${properties.selectedClasses.flexDirection === opt.value
+                      ${sectionProperties.selectedClasses.flexDirection === opt.value
                         ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                         : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                       }
@@ -169,11 +227,14 @@ export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
                 {JUSTIFY_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => addClass("justifyContent", opt.value === properties.selectedClasses.justifyContent ? "" : opt.value)}
+                    onClick={() => {
+                      console.log("🟧 Justify click:", { category: "justifyContent", value: opt.value, current: sectionProperties.selectedClasses });
+                      addClass("justifyContent", opt.value);
+                    }}
                     className={`
                       h-10 px-3 flex items-center justify-center gap-2 rounded-lg
                       text-xs font-medium transition-all duration-200
-                      ${properties.selectedClasses.justifyContent === opt.value
+                      ${sectionProperties.selectedClasses.justifyContent === opt.value
                         ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                         : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                       }
@@ -192,11 +253,14 @@ export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
                 {ALIGN_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => addClass("alignItems", opt.value === properties.selectedClasses.alignItems ? "" : opt.value)}
+                    onClick={() => {
+                      console.log("🟪 Align click:", { category: "alignItems", value: opt.value, current: sectionProperties.selectedClasses });
+                      addClass("alignItems", opt.value);
+                    }}
                     className={`
                       h-10 px-3 flex items-center justify-center gap-2 rounded-lg
                       text-xs font-medium transition-all duration-200
-                      ${properties.selectedClasses.alignItems === opt.value
+                      ${sectionProperties.selectedClasses.alignItems === opt.value
                         ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                         : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                       }
@@ -229,7 +293,7 @@ export function LayoutSection({ properties, addClass, isOpen, onToggle }) {
 
             <div className="pt-2">
               <Toggle
-                value={properties.selectedClasses.gridCols === "grid-cols-12"}
+                value={sectionProperties.selectedClasses.gridCols === "grid-cols-12"}
                 onChange={(v) => addClass("gridCols", v ? "grid-cols-12" : "")}
                 label="Auto-fit columns"
               />

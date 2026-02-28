@@ -166,3 +166,38 @@ export function popHistory() {
 	saveToStorage(STORAGE_KEY.history, history);
 	return previousSnapshot;
 }
+
+/* =========================================================
+   Page classes persistence (selectedClasses)
+   ========================================================= */
+
+const PAGE_CLASSES_KEY = "axonforge:page-classes";
+
+export function loadPageClasses(validPageIds = null) {
+	const raw = localStorage.getItem(PAGE_CLASSES_KEY);
+	if (!raw) return {};
+
+	try {
+		const parsed = JSON.parse(raw);
+		if (!validPageIds) return parsed;
+
+		// Filter to valid pages only
+		const filtered = {};
+		for (const id of validPageIds) {
+			if (parsed[id]) filtered[id] = parsed[id];
+		}
+		return filtered;
+	} catch {
+		return {};
+	}
+}
+
+export function savePageClasses(pages) {
+	const out = {};
+	for (const p of pages) {
+		if (p.selectedClasses && Object.keys(p.selectedClasses).length > 0) {
+			out[p.id] = p.selectedClasses;
+		}
+	}
+	localStorage.setItem(PAGE_CLASSES_KEY, JSON.stringify(out));
+}

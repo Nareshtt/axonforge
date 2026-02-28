@@ -114,6 +114,7 @@ export function TimelinePanel() {
   return (
     <div
       ref={panelRef}
+			data-timeline
       onMouseEnter={() => setFocusedSurface('timeline')}
       onMouseLeave={() => setFocusedSurface('canvas')}
       className="fixed bottom-0 left-0 right-0 h-72 bg-black border-t border-[#1f1f1f] z-50 flex flex-col select-none"

@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@axonforge/core": "file:packages/core",
+    "@babel/generator": "^7.29.1",
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "@babel/types": "^7.29.0",
     "@tailwindcss/vite": "^4.1.18",
     "konva": "^10.0.12",
     "lucide-react": "^0.562.0",

@@ -86,7 +86,7 @@ function SizeControls({ label, value, onChange, quickOptions }) {
           value={currentVal}
           onChange={(v) => onChange(v === 16 ? "" : `text-[${v}px]`)}
           min={8}
-          max={72}
+          max={999}
           showControls={true}
           className="w-full"
         />
@@ -141,8 +141,8 @@ const getTextAlignIcon = (value) => {
   }
 };
 
-export function TypographySection({ properties, addClass, isOpen, onToggle }) {
-  const fontSizeValue = properties.selectedClasses.fontSize || "";
+export function TypographySection({ sectionProperties: sectionProperties, addClass, isOpen, onToggle }) {
+  const fontSizeValue = sectionProperties?.selectedClasses?.fontSize || "";
 
   const getWeightDisplay = (option) => {
     const weights = { "font-thin": 100, "font-extralight": 200, "font-light": 300, "font-normal": 400, "font-medium": 500, "font-semibold": 600, "font-bold": 700, "font-extrabold": 800 };
@@ -164,7 +164,7 @@ export function TypographySection({ properties, addClass, isOpen, onToggle }) {
         <div className="space-y-2">
           <span className="text-xs font-medium text-[#71717a]">Weight</span>
           <Select
-            value={properties.selectedClasses.fontWeight || ""}
+            value={sectionProperties.selectedClasses.fontWeight || ""}
             onChange={(v) => addClass("fontWeight", v)}
             options={FONT_WEIGHT_OPTIONS.map(opt => ({
               ...opt,
@@ -181,11 +181,11 @@ export function TypographySection({ properties, addClass, isOpen, onToggle }) {
             {TEXT_ALIGNS.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => addClass("textAlign", opt.value === properties.selectedClasses.textAlign ? "" : opt.value)}
+                onClick={() => addClass("textAlign", opt.value === sectionProperties.selectedClasses.textAlign ? "" : opt.value)}
                 className={`
                   h-10 px-3 flex items-center justify-center gap-2 rounded-lg
                   text-xs font-medium transition-all duration-200
-                  ${properties.selectedClasses.textAlign === opt.value
+                  ${sectionProperties.selectedClasses.textAlign === opt.value
                     ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                     : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                   }
@@ -202,7 +202,7 @@ export function TypographySection({ properties, addClass, isOpen, onToggle }) {
         <div className="space-y-2">
           <span className="text-xs font-medium text-[#71717a]">Line Height</span>
           <Select
-            value={properties.selectedClasses.leading || "leading-normal"}
+            value={sectionProperties.selectedClasses.leading || "leading-normal"}
             onChange={(v) => addClass("leading", v)}
             options={LINE_HEIGHTS}
             placeholder="Select line height..."
@@ -213,7 +213,7 @@ export function TypographySection({ properties, addClass, isOpen, onToggle }) {
         <div className="space-y-2">
           <span className="text-xs font-medium text-[#71717a]">Letter Spacing</span>
           <Select
-            value={properties.selectedClasses.tracking || "tracking-normal"}
+            value={sectionProperties.selectedClasses.tracking || "tracking-normal"}
             onChange={(v) => addClass("tracking", v)}
             options={LETTER_SPACING}
             placeholder="Select spacing..."
@@ -223,12 +223,12 @@ export function TypographySection({ properties, addClass, isOpen, onToggle }) {
         {/* Text Transform */}
         <div className="space-y-3 pt-2">
           <Toggle
-            value={properties.selectedClasses.uppercase === "uppercase"}
+            value={sectionProperties.selectedClasses.uppercase === "uppercase"}
             onChange={(v) => addClass("uppercase", v ? "uppercase" : "")}
             label="Uppercase"
           />
           <Toggle
-            value={properties.selectedClasses.lowercase === "lowercase"}
+            value={sectionProperties.selectedClasses.lowercase === "lowercase"}
             onChange={(v) => addClass("lowercase", v ? "lowercase" : "")}
             label="Lowercase"
           />

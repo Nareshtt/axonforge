@@ -87,7 +87,7 @@ function OpacityControls({ label, value, onChange, quickOptions }) {
   );
 }
 
-export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
+export function EffectsSection({ sectionProperties: sectionProperties, addClass, isOpen, onToggle }) {
   const getBorderStyleIcon = (value) => {
     const opt = BORDER_STYLES.find(o => o.value === value);
     if (!opt || !opt.icon) return null;
@@ -102,7 +102,7 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
         <div className="space-y-2">
           <span className="text-xs font-medium text-[#71717a]">Shadow</span>
           <Select
-            value={properties.selectedClasses.shadow || ""}
+            value={sectionProperties.selectedClasses.shadow || ""}
             onChange={(v) => addClass("shadow", v)}
             options={SHADOW_OPTIONS}
             placeholder="None"
@@ -112,7 +112,7 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
         {/* Opacity */}
         <OpacityControls
           label="Opacity"
-          value={properties.selectedClasses.opacity || ""}
+          value={sectionProperties.selectedClasses.opacity || ""}
           onChange={(v) => addClass("opacity", v)}
           quickOptions={OPACITY_LEVELS}
         />
@@ -128,7 +128,7 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
           <div className="space-y-1.5">
             <span className="text-[10px] text-[#52525b]">Width</span>
             <NumberInput
-              value={parseInt(properties.selectedClasses.borderWidth?.replace("border-", "")) || 0}
+              value={parseInt(sectionProperties.selectedClasses.borderWidth?.replace("border-", "")) || 0}
               onChange={(v) => addClass("borderWidth", v === 0 ? "" : `border-${v}`)}
               min={0}
               max={8}
@@ -146,11 +146,11 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
                 return (
                   <button
                     key={opt.value}
-                    onClick={() => addClass("borderStyle", opt.value === properties.selectedClasses.borderStyle ? "" : opt.value)}
+                    onClick={() => addClass("borderStyle", opt.value === sectionProperties.selectedClasses.borderStyle ? "" : opt.value)}
                     className={`
                       h-10 px-3 flex items-center justify-center gap-2 rounded-lg
                       text-xs font-medium transition-all duration-200
-                      ${properties.selectedClasses.borderStyle === opt.value
+                      ${sectionProperties.selectedClasses.borderStyle === opt.value
                         ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                         : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                       }
@@ -164,10 +164,10 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
             </div>
           </div>
 
-          {parseInt(properties.selectedClasses.borderWidth?.replace("border-", "")) > 0 && (
+          {parseInt(sectionProperties.selectedClasses.borderWidth?.replace("border-", "")) > 0 && (
             <div className="pt-1">
               <ColorPicker
-                value={properties.selectedClasses.borderColor || "#ffffff"}
+                value={sectionProperties.selectedClasses.borderColor || "#ffffff"}
                 onChange={(v) => addClass("borderColor", v)}
                 label="Color"
               />
@@ -185,12 +185,12 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
                 onClick={() =>
                   addClass(
                     "borderRadius",
-                    opt.value === properties.selectedClasses.borderRadius ? "" : opt.value
+                    opt.value === sectionProperties.selectedClasses.borderRadius ? "" : opt.value
                   )
                 }
                 className={`
                   h-9 rounded-lg text-xs font-medium transition-all duration-200
-                  ${properties.selectedClasses.borderRadius === opt.value
+                  ${sectionProperties.selectedClasses.borderRadius === opt.value
                     ? "bg-[#6366f1] text-white shadow-md shadow-[#6366f1]/25"
                     : "bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#e4e4e7] border border-[#27272a]"
                   }
@@ -205,17 +205,17 @@ export function EffectsSection({ properties, addClass, isOpen, onToggle }) {
         {/* Filters */}
         <div className="space-y-3 pt-1">
           <Toggle
-            value={properties.selectedClasses.blur && properties.selectedClasses.blur !== "blur-0"}
+            value={sectionProperties.selectedClasses.blur && sectionProperties.selectedClasses.blur !== "blur-0"}
             onChange={(v) => addClass("blur", v ? "blur-sm" : "")}
             label="Blur"
           />
           <Toggle
-            value={properties.selectedClasses.grayscale === "grayscale"}
+            value={sectionProperties.selectedClasses.grayscale === "grayscale"}
             onChange={(v) => addClass("grayscale", v ? "grayscale" : "")}
             label="Grayscale"
           />
           <Toggle
-            value={properties.selectedClasses.invert === "invert"}
+            value={sectionProperties.selectedClasses.invert === "invert"}
             onChange={(v) => addClass("invert", v ? "invert" : "")}
             label="Invert Colors"
           />

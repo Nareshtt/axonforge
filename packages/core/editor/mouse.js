@@ -17,14 +17,43 @@ export function initMouse() {
 	if (initialized) return;
 	initialized = true;
 
+	const getEventTargetElement = (e) => {
+		const t = e?.target;
+		if (t instanceof Element) return t;
+		if (t && t.parentElement instanceof Element) return t.parentElement;
+		if (t && t.parentNode instanceof Element) return t.parentNode;
+		return null;
+	};
+
+	const surfaceFromEvent = (e) => {
+		const el = getEventTargetElement(e);
+		if (!el) return "canvas";
+		if (el.closest("[data-timeline]")) return "timeline";
+		if (
+			el.closest("[data-left-sidebar]") ||
+			el.closest("[data-sidebar]") ||
+			el.closest("[data-topbar]")
+		)
+			return "sidebar";
+		return "canvas";
+	};
+
+	const syncFocusedSurface = (e) => {
+		const state = useEditorStore.getState();
+		// If timeline pan is keyboard-driven, keep timeline focused.
+		const next = state.isTimelinePanning ? "timeline" : surfaceFromEvent(e);
+		if (state.focusedSurface !== next) state.setFocusedSurface(next);
+		return next;
+	};
+
 	let panSource = null;
 
 	const onMouseDown = (e) => {
-		const { focusedSurface, isTimelinePanning } = useEditorStore.getState();
+		const focusedSurface = syncFocusedSurface(e);
+		const { isTimelinePanning } = useEditorStore.getState();
 
-		/* ---------- TIMELINE/SIDEBAR FOCUS - Skip canvas events ---------- */
-		if (focusedSurface === "timeline" || focusedSurface === "sidebar") {
-			// Don't process canvas mouse events when sidebar or timeline is focused
+		/* ---------- SIDEBAR FOCUS - Skip canvas events ---------- */
+		if (focusedSurface === "sidebar") {
 			return;
 		}
 
@@ -79,7 +108,7 @@ export function initMouse() {
 	};
 
 	const onMouseMove = (e) => {
-		const { focusedSurface } = useEditorStore.getState();
+		const focusedSurface = syncFocusedSurface(e);
 
 		/* ---------- TIMELINE PANNING (Keyboard triggered - no click needed) ---------- */
 		if (focusedSurface === "timeline") {

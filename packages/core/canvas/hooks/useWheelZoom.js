@@ -19,11 +19,24 @@ export function useWheelZoom(app) {
 		if (!app) return;
 
 		const onWheel = (e) => {
-			// Skip zoom when sidebar or timeline is focused
-			const { focusedSurface } = useEditorStore.getState();
-			if (focusedSurface === "sidebar" || focusedSurface === "timeline") {
-				return; // Allow default scroll behavior
+			// Auto-detect surface from pointer target
+			const t = e?.target;
+			const el = t instanceof Element ? t : (t && t.parentElement instanceof Element ? t.parentElement : null);
+			if (
+				el &&
+				(
+					el.closest("[data-timeline]") ||
+					el.closest("[data-left-sidebar]") ||
+					el.closest("[data-sidebar]") ||
+					el.closest("[data-topbar]")
+				)
+			) {
+				return; // Allow normal scroll in UI panels
 			}
+
+			// Ensure canvas is focused when zooming
+			const st = useEditorStore.getState();
+			if (st.focusedSurface !== "canvas") st.setFocusedSurface("canvas");
 
 			e.preventDefault();
 			const { scale } = useViewport.getState();

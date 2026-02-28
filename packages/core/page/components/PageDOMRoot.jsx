@@ -1,6 +1,7 @@
 import { usePageStore } from "../../stores/pageStore";
 import { useViewport } from "../../stores/useViewport";
 import { PageDOM } from "./PageDOM";
+import { SelectionOverlay } from "./SelectionOverlay";
 
 export function PageDOMRoot() {
 	const pages = usePageStore((s) => s.pages);
@@ -23,6 +24,7 @@ export function PageDOMRoot() {
 				zIndex: 1,
 			}}
 		>
+			<SelectionOverlay />
 			{pages.map((page) => (
 				<PageDOM key={page.id} page={page} viewport={viewport} />
 			))}

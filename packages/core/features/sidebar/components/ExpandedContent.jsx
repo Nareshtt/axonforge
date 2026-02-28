@@ -2,6 +2,7 @@ import { ChevronDown, FileText, Layers, Plus } from 'lucide-react';
 import { SidebarSection } from './SidebarSection';
 import { PageItem } from './PageItem';
 import { NewPageInput } from './NewPageInput';
+import { LayersTree } from './LayersTree';
 
 export function ExpandedContent({
   pagesExpanded,
@@ -67,7 +68,7 @@ export function ExpandedContent({
         expanded={layersExpanded}
         onToggle={onToggleLayers}
       >
-        <div className="px-3 py-1.5 text-[#444] text-xs">Coming soon</div>
+				<LayersTree />
       </SidebarSection>
     </div>
   );
